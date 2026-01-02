@@ -63,7 +63,7 @@ Frontend (CLI)
 - Controller không chứa logic nghiệp vụ
 - Logic nằm trong Service
 - Repository chỉ chịu trách nhiệm lưu trữ
-
+```
 ### 6. CẤU TRÚC THƯ MỤC DỰ ÁN
 ```text
 restaurant/
@@ -106,7 +106,7 @@ restaurant/
     ├── payment_strategy.py
     ├── cash_payment.py
     └── bank_payment.py
-
+```
 ### 7. PHÂN CÔNG CÔNG VIỆC (4 NGƯỜI)
 NGƯỜI 1 – BACKEND CORE (TABLE & MENU)
 #### Vai trò
