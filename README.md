@@ -44,6 +44,7 @@ Singleton (tuỳ chọn)	Quản lý Repository dùng chung
 Python hoàn toàn đáp ứng các nguyên lý OOSD, không ảnh hưởng đến điểm số.
 
 ### 5. KIẾN TRÚC HỆ THỐNG
+```text
 Frontend (CLI)
 │
 ├── Controller
@@ -64,6 +65,7 @@ Frontend (CLI)
 - Repository chỉ chịu trách nhiệm lưu trữ
 
 ### 6. CẤU TRÚC THƯ MỤC DỰ ÁN
+```text
 restaurant/
 ├── main.py
 │
