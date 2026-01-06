@@ -36,12 +36,12 @@
 - PaymentMethod: CASH, BANK_TRANSFER
 
 ### 4. DESIGN PATTERNS ÁP DỤNG
-Design Pattern	Mục đích sử dụng
-State Pattern	Quản lý vòng đời trạng thái món ăn
-Strategy Pattern	Xử lý các hình thức thanh toán
-MVC (đơn giản)	Phân tách Controller – Service – Model
-Singleton (tuỳ chọn)	Quản lý Repository dùng chung
-Python hoàn toàn đáp ứng các nguyên lý OOSD, không ảnh hưởng đến điểm số.
+- Design Pattern	Mục đích sử dụng
+- State Pattern	Quản lý vòng đời trạng thái món ăn
+- Strategy Pattern	Xử lý các hình thức thanh toán
+- MVC (đơn giản)	Phân tách Controller – Service – Model
+- Singleton (tuỳ chọn)	Quản lý Repository dùng chung
+- Python hoàn toàn đáp ứng các nguyên lý OOSD, không ảnh hưởng đến điểm số.
 
 ### 5. KIẾN TRÚC HỆ THỐNG
 ```text
@@ -58,12 +58,13 @@ Frontend (CLI)
 │ ├── Enum
 │ ├── State
 │ └── Strategy
+```
 #### Nguyên tắc:
 - Frontend chỉ gọi Controller
 - Controller không chứa logic nghiệp vụ
 - Logic nằm trong Service
 - Repository chỉ chịu trách nhiệm lưu trữ
-```
+
 ### 6. CẤU TRÚC THƯ MỤC DỰ ÁN
 ```text
 restaurant/
@@ -108,7 +109,7 @@ restaurant/
     └── bank_payment.py
 ```
 ### 7. PHÂN CÔNG CÔNG VIỆC (4 NGƯỜI)
-NGƯỜI 1 – BACKEND CORE (TABLE & MENU)
+#### NGƯỜI 1 – BACKEND CORE (TABLE & MENU)
 #### Vai trò
 #### Backend nền tảng – quản lý dữ liệu và nghiệp vụ cơ bản.
 #### Phụ trách
@@ -134,11 +135,11 @@ NGƯỜI 1 – BACKEND CORE (TABLE & MENU)
 - Không thay đổi trạng thái trực tiếp
 - Logic đặt trong Service
 
-NGƯỜI 2 – BACKEND LOGIC (ORDER & STATE)
-####Người chịu trách nhiệm phần OOSD quan trọng nhất
-####Vai trò
-####Xử lý nghiệp vụ phức tạp và State Pattern.
-####Phụ trách
+#### NGƯỜI 2 – BACKEND LOGIC (ORDER & STATE)
+#### Người chịu trách nhiệm phần OOSD quan trọng nhất
+#### Vai trò
+#### Xử lý nghiệp vụ phức tạp và State Pattern.
+#### Phụ trách
 - Model
 - Order
 - OrderItem
@@ -198,20 +199,21 @@ NGƯỜI 2 – BACKEND LOGIC (ORDER & STATE)
 - Menu console
 - Nhập / xuất dữ liệu
 - Điều hướng chức năng
-####Các màn hình CLI
+#### Các màn hình CLI
 1.	Quản lý bàn
 2.	Quản lý menu
 3.	Gọi món
 4.	Cập nhật trạng thái món
 5.	Thanh toán
 6.	Thoát
-####Nguyên tắc
-•	Không xử lý business logic
-•	Chỉ gọi Controller
-•	Validate input cơ bản
-•	Dễ demo
+#### Nguyên tắc
+- Không xử lý business logic
+- Chỉ gọi Controller
+- Validate input cơ bản
+- Dễ demo
 
 ### 8. SƠ ĐỒ PHÂN QUYỀN GỌI CODE
+``` Text
 Frontend (CLI)
    ↓
 Controller
@@ -221,14 +223,14 @@ Service
 Repository
    ↓
 Model
-•	Frontend không gọi Service
-•	Controller không chứa logic phức tạp
-
+- Frontend không gọi Service
+- Controller không chứa logic phức tạp
+```
 ### 9. PHÂN CÔNG UML & BÁO CÁO
-Hạng mục	Phụ trách
-Use Case Diagram Model	Người 4
-Class Diagram	Người 1 + Người 2
-Interaction model (sequence/activity).	Người 2
-Design decisions & patterns applied.	Người 3
-Tổng hợp báo cáo	Người 4
+- Hạng mục	Phụ trách
+- Use Case Diagram Model	Người 4
+- Class Diagram	Người 1 + Người 2
+- Interaction model (sequence/activity).	Người 2
+- Design decisions & patterns applied.	Người 3
+- Tổng hợp báo cáo	Người 4
 
