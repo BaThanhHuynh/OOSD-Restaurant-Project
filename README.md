@@ -8,17 +8,17 @@
 - Theo dõi trạng thái món ăn trong bếp
 - Thanh toán và đóng bàn
 #### Trọng tâm của đề tài là:    
-- Thiết kế hướng đối tượng (Object-Oriented Software Design – OOSD),
-- không tập trung vào giao diện đồ họa hay hệ quản trị cơ sở dữ liệu.
-
+- Thiết kế hướng đối tượng (Object-Oriented Software Design – OOSD).
+- Áp dụng triệt để các nguyên lý OOP (Encapsulation, Inheritance, Polymorphism, Abstraction).
+- Không tập trung vào giao diện đồ họa (GUI) hay hệ quản trị cơ sở dữ liệu (DB).
 ### 2. CÔNG NGHỆ & PHẠM VI
-- Ngôn ngữ: Python 3.x
-- Giao diện người dùng: Console / Command Line Interface (CLI)
-- Lưu trữ dữ liệu: In-memory (list, dict)
+- Ngôn ngữ: Java (JDK 17 hoặc 21).
+- Giao diện người dùng: Console / Command Line Interface (CLI) - sử dụng Scanner, System.out.
+- Lưu trữ dữ liệu: In-memory (sử dụng Java Collections: ArrayList, HashMap, LinkedList).
 #### Không sử dụng:
-- Framework web (Django, Flask, FastAPI, …)
-- ORM
-- Database thật (MySQL, PostgreSQL, …)
+- Framework lớn (Spring Boot, Jakarta EE, Hibernate...).
+- Database thật (MySQL, PostgreSQL, SQLite...).
+- Các thư viện hỗ trợ UI phức tạp (JavaFX, Swing - trừ khi yêu cầu bắt buộc, nhưng ưu tiên CLI để tập trung logic).
 #### Mục đích: giữ hệ thống nhẹ, rõ thiết kế, dễ phân tích OOP & Design Patterns.
 
 ### 3. DOMAIN MODEL (PYTHON OOP)
@@ -41,155 +41,129 @@
 - Strategy Pattern	Xử lý các hình thức thanh toán
 - MVC (đơn giản)	Phân tách Controller – Service – Model
 - Singleton (tuỳ chọn)	Quản lý Repository dùng chung
-- Python hoàn toàn đáp ứng các nguyên lý OOSD, không ảnh hưởng đến điểm số.
 
 ### 5. KIẾN TRÚC HỆ THỐNG
 ```text
-Frontend (CLI)
+Frontend
 │
 ├── Controller
-│ │
-│ └── Service (Business Logic)
-│ │
-│ └── Repository (In-memory)
-│ │
-│ └── Model
-│ ├── Entity
-│ ├── Enum
-│ ├── State
-│ └── Strategy
+│   │
+│   └── Service (Business Logic Interface & Impl)
+│       │
+│       └── Repository (In-memory Storage)
+│           │
+│           └── Model
+│               ├── Entity
+│               ├── Enum
+│               ├── State
+│               └── Strategy
 ```
 #### Nguyên tắc:
-- Frontend chỉ gọi Controller
-- Controller không chứa logic nghiệp vụ
-- Logic nằm trong Service
-- Repository chỉ chịu trách nhiệm lưu trữ
-
+- Frontend chỉ gọi Controller.
+- Controller nhận input, validate cơ bản và gọi Service.
+- Mọi logic nghiệp vụ nằm trong Service.
+- Repository chỉ chịu trách nhiệm CRUD dữ liệu vào List/Map.
 ### 6. CẤU TRÚC THƯ MỤC DỰ ÁN
 ```text
-restaurant/
-├── main.py
-│
-├── controller/
-│   ├── table_controller.py
-│   ├── menu_controller.py
-│   ├── order_controller.py
-│   └── payment_controller.py
-│
-├── service/
-│   ├── table_service.py
-│   ├── menu_service.py
-│   ├── order_service.py
-│   └── payment_service.py
-│
-├── model/
-│   ├── table.py
-│   ├── menu_item.py
-│   ├── order.py
-│   ├── order_item.py
-│   ├── payment.py
-│   └── enums.py
-│
-├── repository/
-│   ├── table_repo.py
-│   ├── menu_repo.py
-│   ├── order_repo.py
-│   └── payment_repo.py
-│
-├── state/
-│   ├── dish_state.py
-│   ├── ordered_state.py
-│   ├── cooking_state.py
-│   ├── ready_state.py
-│   └── served_state.py
-│
-└── strategy/
-    ├── payment_strategy.py
-    ├── cash_payment.py
-    └── bank_payment.py
+src/
+└── com/
+    └── restaurant/
+        ├── Main.java  (Entry point)
+        │
+        ├── controller/
+        │   ├── TableController.java
+        │   ├── MenuController.java
+        │   ├── OrderController.java
+        │   └── PaymentController.java
+        │
+        ├── service/
+        │   ├── TableService.java
+        │   ├── MenuService.java
+        │   ├── OrderService.java
+        │   └── PaymentService.java
+        │
+        ├── model/
+        │   ├── entity/
+        │   │   ├── Table.java
+        │   │   ├── MenuItem.java
+        │   │   ├── Order.java
+        │   │   ├── OrderItem.java
+        │   │   └── Payment.java
+        │   └── enums/
+        │       ├── TableStatus.java
+        │       ├── MenuItemStatus.java
+        │       ├── OrderStatus.java
+        │       ├── DishStatus.java
+        │       └── PaymentMethod.java
+        │
+        ├── repository/
+        │   ├── TableRepository.java
+        │   ├── MenuRepository.java
+        │   ├── OrderRepository.java
+        │   └── PaymentRepository.java
+        │
+        ├── pattern/
+        │   ├── state/
+        │   │   ├── DishState.java (Interface)
+        │   │   ├── OrderedState.java
+        │   │   ├── CookingState.java
+        │   │   ├── ReadyState.java
+        │   │   └── ServedState.java
+        │   └── strategy/
+        │       ├── PaymentStrategy.java (Interface)
+        │       ├── CashPayment.java
+        │       └── BankTransferPayment.java
+        │
+        └── view/ (Optional - Tách code in/out khỏi Main)
+            └── ConsoleView.java
 ```
 ### 7. PHÂN CÔNG CÔNG VIỆC (4 NGƯỜI)
 #### NGƯỜI 1 – BACKEND CORE (TABLE & MENU)
 #### Vai trò
 #### Backend nền tảng – quản lý dữ liệu và nghiệp vụ cơ bản.
 #### Phụ trách
-- Model
-- Table
-- MenuItem
-- TableStatus, MenuItemStatus
-- Repository
-- TableRepository
-- MenuRepository
-- Service
-- TableService
-- MenuService
-- Controller
-- TableController
-- MenuController
+- Model: Table, MenuItem, Enums liên quan.
+- Repository: TableRepository, MenuRepository.
+- Service: TableService, MenuService.
+- Controller: TableController, MenuController.
 #### Nghiệp vụ
 - Tạo / xoá / cập nhật bàn
 - Mở / đóng bàn
 - CRUD menu
 #### Yêu cầu OOSD
-- Encapsulation (thuộc tính private)
-- Không thay đổi trạng thái trực tiếp
-- Logic đặt trong Service
-
+- Encapsulation: Tất cả thuộc tính là private, truy xuất qua Getter/Setter.
+- Sử dụng Constructor để khởi tạo đối tượng chuẩn.
 #### NGƯỜI 2 – BACKEND LOGIC (ORDER & STATE)
 #### Người chịu trách nhiệm phần OOSD quan trọng nhất
 #### Vai trò
 #### Xử lý nghiệp vụ phức tạp và State Pattern.
 #### Phụ trách
-- Model
-- Order
-- OrderItem
-- OrderStatus
-- DishStatus
-- State Pattern
-- DishState (abstract)
-- OrderedState
-- CookingState
-- ReadyState
-- ServedState
-- Repository
-- OrderRepository
-- Service
-- OrderService
-- Controller
-- OrderController
-
+Model: Order, OrderItem.
+- State Pattern: Interface DishState, Classes: OrderedState, CookingState, ReadyState, ServedState.
+- Repository: OrderRepository.
+- Service: OrderService.
+- Controller: OrderController.
 #### Nghiệp vụ
 - Tạo order theo bàn
 - Thêm món vào order
 - Chuyển trạng thái món ăn
 #### Yêu cầu OOSD
 - Không dùng if–else xử lý trạng thái
-- Áp dụng State Pattern đúng chuẩn
-- Order độc lập với UI
+- Mỗi trạng thái là một Class riêng biệt implement, interface, DishState.
 
 #### NGƯỜI 3 – BACKEND PAYMENT (STRATEGY PATTERN)
 #### Vai trò
 #### Đóng vòng nghiệp vụ thanh toán.
 #### Phụ trách
-- Model
-- Payment
-- PaymentMethod
-- Strategy Pattern
-- PaymentStrategy
-- CashPayment
-- BankTransferPayment
-- Repository
-- PaymentRepository
-- Service
-- PaymentService
-- Controller
-- PaymentController
+- Model: Payment.
+- Strategy Pattern: Interface PaymentStrategy (method pay(double amount)), Classes: CashPayment, BankTransferPayment.
+- Repository: PaymentRepository.
+- Service: PaymentService.
+- Controller: PaymentController.
 #### Nghiệp vụ
 - Tính tổng tiền order
 - Thực hiện thanh toán
-- Cập nhật trạng thái:
-- Order → COMPLETED
-- Table → AVAILABLE
+- Cập nhật trạng thái: Order → COMPLETED, Table → AVAILABLE
 
 #### NGƯỜI 4 – FRONTEND (CLI USER INTERFACE)
 #### Vai trò
@@ -207,11 +181,9 @@ restaurant/
 5.	Thanh toán
 6.	Thoát
 #### Nguyên tắc
-- Không xử lý business logic
-- Chỉ gọi Controller
-- Validate input cơ bản
-- Dễ demo
-
+- Frontend không chứa logic nghiệp vụ.
+- Frontend không gọi trực tiếp Repository hay Model.
+- Frontend chỉ gọi Controller.
 ### 8. SƠ ĐỒ PHÂN QUYỀN GỌI CODE
 ``` Text
 Frontend (CLI)
@@ -223,9 +195,9 @@ Service
 Repository
    ↓
 Model
+```
 - Frontend không gọi Service
 - Controller không chứa logic phức tạp
-```
 ### 9. PHÂN CÔNG UML & BÁO CÁO
 - Hạng mục	Phụ trách
 - Use Case Diagram Model	Người 4
