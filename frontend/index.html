@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chili POS System</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon"><i class='bx bxs-bowl-hot'></i></div>
+                <h2>4TL RES POS</h2>
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" onclick="app.loadPage('pos')">
+                    <i class='bx bxs-dashboard icon'></i> Menu
+                </a>
+                <a href="#" class="nav-item">
+                    <i class='bx bx-grid-alt icon'></i> Quản lý bàn
+                </a>
+                <a href="#" class="nav-item" onclick="app.loadPage('tables')">
+                    <i class='bx bx-restaurant icon'></i> Order món ăn
+                </a>
+                <a href="#" class="nav-item">
+                    <i class='bx bx-time icon'></i> Trạng thái món ăn
+                </a>
+                <a href="#" class="nav-item">
+                    <i class='bx bx-bar-chart-alt-2 icon'></i> Thống kê
+                </a>
+                <a href="#" class="nav-item">
+                    <i class='bx bx-cog icon'></i> Cài đặt
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="avatar">AD</div>
+                    <div class="user-info">
+                        <h4>Quản lý</h4>
+                        <span>Admin</span>
+                    </div>
+                </div>
+                <button class="logout-btn"><i class='bx bx-log-out'></i> Đăng xuất</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <button class="menu-toggle"><i class='bx bx-menu'></i></button>
+                <div class="search-bar">
+                    <i class='bx bx-search'></i>
+                    <input type="text" placeholder="Tìm kiếm...">
+                </div>
+                <button class="filter-btn"><i class='bx bx-slider-alt'></i></button>
+            </header>
+
+            <section id="pos-page" class="page active">
+                <div class="categories" id="categories-list">
+                    </div>
+
+                <div class="product-grid" id="product-grid">
+                    </div>
+
+                <div class="bottom-status-bar" id="tables-status-bar">
+                    </div>
+            </section>
+        </main>
+
+        <aside class="order-panel">
+            <div class="order-header">
+                <div>
+                    <h2>Bàn 4</h2>
+                    <span>Quản lý</span>
+                </div>
+                <button class="edit-btn"><i class='bx bx-edit-alt'></i></button>
+            </div>
+
+            <div class="order-tabs">
+                <button class="tab-btn active">Món đã gọi</button>
+            </div>
+
+            <div class="order-items-list" id="cart-items">
+                <div class="empty-cart">
+                    <i class='bx bx-basket'></i>
+                    <p>Chưa có món nào</p>
+                </div>
+            </div>
+
+            <div class="payment-section">
+                <div class="summary-row">
+                    <span>Tổng thu</span>
+                    <span id="sub-total">0</span>
+                </div>
+                <div class="summary-row">
+                    <span>Thuế (5%)</span>
+                    <span id="tax-amount">0</span>
+                </div>
+                <div class="summary-divider"></div>
+                <div class="summary-row total">
+                    <span>Tổng số tiền</span>
+                    <span id="final-total">0</span>
+                </div>
+
+                <div class="payment-methods">
+                    <button class="method-card active">
+                        <i class='bx bx-money'></i>
+                        <span>Tiền mặt</span>
+                    </button>
+                    <button class="method-card">
+                        <i class='bx bx-credit-card'></i>
+                        <span>Thẻ</span>
+                    </button>
+                    <button class="method-card">
+                        <i class='bx bx-qr-scan'></i>
+                        <span>Mã QR</span>
+                    </button>
+                </div>
+
+                <button class="place-order-btn" onclick="app.submitOrder()">Thanh toán</button>
+            </div>
+        </aside>
+    </div>
+
+    <script src="assets/js/app.js"></script>
+</body>
+</html>

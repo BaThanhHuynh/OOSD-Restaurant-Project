@@ -44,19 +44,19 @@
 
 ### 5. KIẾN TRÚC HỆ THỐNG
 ```text
-Frontend
+frontend
 │
-├── Controller
+├── assets
 │   │
-│   └── Service (Business Logic Interface & Impl)
-│       │
-│       └── Repository (In-memory Storage)
-│           │
-│           └── Model
-│               ├── Entity
-│               ├── Enum
-│               ├── State
-│               └── Strategy
+│   ├── css
+│   │   └── style.css
+│   │
+│   └── js
+│       ├── api.js
+│       └── app.js
+│   
+├── pages
+└── index.html
 ```
 #### Nguyên tắc:
 - Frontend chỉ gọi Controller.
@@ -65,7 +65,7 @@ Frontend
 - Repository chỉ chịu trách nhiệm CRUD dữ liệu vào List/Map.
 ### 6. CẤU TRÚC THƯ MỤC DỰ ÁN
 ```text
-src/
+backend\src/
 └── com/
     └── restaurant/
         ├── Main.java  (Entry point)
