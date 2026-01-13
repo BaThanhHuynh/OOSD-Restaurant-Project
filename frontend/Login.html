@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập - 4TL POS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="src/css/login.css">
+    <style>
+        body {
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative; /* Quan trọng để định vị lớp nền */
+            overflow: hidden;   /* Cắt bỏ phần rìa bị nhoè của ảnh */
+        }
+
+        /* Lớp giả chứa hình nền và hiệu ứng mờ */
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            
+            /* Ảnh nền bạn chọn */
+            background: url('src/assets/Nha_hang.jpg') no-repeat center center;
+            background-size: cover;
+            
+            /* Hiệu ứng mờ */
+            filter: blur(5px); /* Tăng giảm số px để chỉnh độ mờ */
+            
+            /* Đẩy lùi ra sau nội dung chính */
+            z-index: -2; 
+            
+            /* Phóng to nhẹ (110%) để che đi các cạnh bị mờ trắng */
+            transform: scale(1.1); 
+        }
+
+        /* (Tùy chọn) Lớp phủ tối để làm nổi bật form đăng nhập */
+        body::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.3); /* Màu đen mờ 30% */
+            z-index: -1; /* Nằm trên ảnh nền nhưng dưới form */
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="forms-wrapper">
+            <form id="login-form" class="auth-form active">
+                <div class="header">
+                    <div class="logo-icon"><i class='bx bxs-bowl-hot'></i></div>
+                    <h2>Chào mừng trở lại!</h2>
+                    <p>Đăng nhập để quản lý nhà hàng</p>
+                </div>
+                
+                <div class="input-group">
+                    <label>Tên đăng nhập</label>
+                    <div class="input-field">
+                        <i class='bx bx-user'></i>
+                        <input type="text" id="login-username" placeholder="admin" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Mật khẩu</label>
+                    <div class="input-field">
+                        <i class='bx bx-lock-alt'></i>
+                        <input type="password" id="login-password" placeholder="••••••" required>
+                        <i class='bx bx-hide toggle-password'></i>
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <label class="remember"><input type="checkbox"> Ghi nhớ</label>
+                    <a href="#">Quên mật khẩu?</a>
+                </div>
+
+                <button type="submit" class="btn-submit">Đăng nhập</button>
+
+                <div class="switch-form">
+                    Chưa có tài khoản? <a href="#" onclick="auth.switchMode('register')">Đăng ký ngay</a>
+                </div>
+            </form>
+
+            <form id="register-form" class="auth-form">
+                <div class="header">
+                    <h2>Tạo tài khoản mới</h2>
+                    <p>Điền thông tin để đăng ký hệ thống</p>
+                </div>
+                <div class="input-group">
+                    <label>Họ và tên</label>
+                    <div class="input-field"><i class='bx bx-id-card'></i><input type="text" id="reg-fullname" placeholder="Nguyễn Văn A" required></div>
+                </div>
+                <div class="input-group">
+                    <label>Tên đăng nhập</label>
+                    <div class="input-field"><i class='bx bx-user'></i><input type="text" id="reg-username" placeholder="Nhập username" required></div>
+                </div>
+                <div class="input-group">
+                    <label>Mật khẩu</label>
+                    <div class="input-field"><i class='bx bx-lock-alt'></i><input type="password" id="reg-password" placeholder="••••••" required></div>
+                </div>
+                <div class="input-group">
+                    <label>Xác nhận mật khẩu</label>
+                    <div class="input-field"><i class='bx bx-check-shield'></i><input type="password" id="reg-confirm" placeholder="••••••" required></div>
+                </div>
+                <button type="submit" class="btn-submit">Đăng ký</button>
+                <div class="switch-form">Đã có tài khoản? <a href="#" onclick="auth.switchMode('login')">Đăng nhập</a></div>
+            </form>
+        </div>
+        
+        <div class="decoration-side">
+            <div class="intro-overlay">
+                <h1>4TL RES POS</h1>
+                <p>Hệ thống quản lý nhà hàng chuyên nghiệp.</p>
+            </div>
+
+            <div class="slider-wrapper">
+                <img src="src/assets/Pho.jpg" class="slide active">
+                <img src="src/assets/Bun_bo.jpg" class="slide">
+                <img src="src/assets/Bun_cha_HN.jpg" class="slide">
+                <img src="src/assets/Com_tam.jpg" class="slide">
+                <img src="src/assets/Ga_nuong.jpg" class="slide">
+
+            <button class="nav-btn prev" onclick="slider.prev()"><i class='bx bx-chevron-left'></i></button>
+            <button class="nav-btn next" onclick="slider.next()"><i class='bx bx-chevron-right'></i></button>
+            
+            <div class="dots-container">
+                <span class="dot active" onclick="slider.goTo(0)"></span>
+                <span class="dot" onclick="slider.goTo(1)"></span>
+                <span class="dot" onclick="slider.goTo(2)"></span>
+            </div>
+        </div>
+    </div>
+
+    <script src="src/js/auth.js"></script>
+    
+    <script>
+        const slider = {
+            currentIndex: 0,
+            slides: document.querySelectorAll('.slide'),
+            dots: document.querySelectorAll('.dot'),
+            
+            show: function(index) {
+                // Xử lý vòng lặp index
+                if (index >= this.slides.length) index = 0;
+                if (index < 0) index = this.slides.length - 1;
+                
+                this.currentIndex = index;
+
+                // Ẩn tất cả, hiện slide hiện tại
+                this.slides.forEach(s => s.classList.remove('active'));
+                this.dots.forEach(d => d.classList.remove('active'));
+                
+                this.slides[this.currentIndex].classList.add('active');
+                this.dots[this.currentIndex].classList.add('active');
+            },
+
+            next: function() { this.show(this.currentIndex + 1); },
+            prev: function() { this.show(this.currentIndex - 1); },
+            goTo: function(index) { this.show(index); },
+
+            // Tự động chuyển sau 5 giây
+            autoPlay: function() {
+                setInterval(() => this.next(), 5000);
+            }
+        };
+
+        // Bắt đầu autoplay
+        slider.autoPlay();
+    </script>
+</body>
+</html>

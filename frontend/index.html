@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chili POS System</title>
-    <link rel="stylesheet" href="assets/css/style.css">
+    
+    <link rel="stylesheet" href="src/css/style.css">
+    <link rel="stylesheet" href="src/css/KitchenMonitor.css">
+    
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
@@ -17,22 +20,19 @@
             </div>
             
             <nav class="nav-menu">
-                <a href="#" class="nav-item active" onclick="app.loadPage('pos')">
+                <a href="#" class="nav-item active" id="nav-pos" onclick="app.loadPage('pos-page', 'nav-pos')">
                     <i class='bx bxs-dashboard icon'></i> Menu
                 </a>
-                <a href="#" class="nav-item">
+                <a href="#" class="nav-item" id="nav-tables" onclick="app.loadPage('tables-page', 'nav-tables')">
                     <i class='bx bx-grid-alt icon'></i> Quản lý bàn
                 </a>
-                <a href="#" class="nav-item" onclick="app.loadPage('tables')">
-                    <i class='bx bx-restaurant icon'></i> Order món ăn
-                </a>
-                <a href="#" class="nav-item">
+                <a href="#" class="nav-item" id="nav-kitchen" onclick="app.loadPage('kitchen-page', 'nav-kitchen')">
                     <i class='bx bx-time icon'></i> Trạng thái món ăn
                 </a>
-                <a href="#" class="nav-item">
-                    <i class='bx bx-bar-chart-alt-2 icon'></i> Thống kê
+                <a href="#" class="nav-item" id="nav-admin" onclick="app.loadPage('menu-admin-page', 'nav-admin')">
+                    <i class='bx bx-list-ul icon'></i> Quản lý Menu
                 </a>
-                <a href="#" class="nav-item">
+                <a href="#" class="nav-item" id="nav-settings" onclick="app.loadPage('settings-page', 'nav-settings')">
                     <i class='bx bx-cog icon'></i> Cài đặt
                 </a>
             </nav>
@@ -45,7 +45,9 @@
                         <span>Admin</span>
                     </div>
                 </div>
-                <button class="logout-btn"><i class='bx bx-log-out'></i> Đăng xuất</button>
+                <button class="logout-btn" onclick="auth.logout()">
+                    <i class='bx bx-log-out'></i> Đăng xuất
+                </button>
             </div>
         </aside>
 
@@ -60,22 +62,76 @@
             </header>
 
             <section id="pos-page" class="page active">
-                <div class="categories" id="categories-list">
-                    </div>
+                <div class="categories" id="categories-list"></div>
+                <div class="product-grid" id="product-grid"></div>
+                <div class="bottom-status-bar" id="tables-status-bar"></div>
+            </section>
 
-                <div class="product-grid" id="product-grid">
+            <section id="tables-page" class="page" style="display: none;">
+                <div class="page-header">
+                    <h2>Sơ đồ bàn & Trạng thái</h2>
+                    <button class="btn-primary-action" onclick="alert('Chức năng thêm bàn')">
+                        <i class='bx bx-plus'></i> Thêm bàn
+                    </button>
+                </div>
+                <div class="table-grid-container">
                     </div>
+            </section>
 
-                <div class="bottom-status-bar" id="tables-status-bar">
+            <section id="kitchen-page" class="page" style="display: none;">
+                <div class="kitchen-board">
+                    <div class="kanban-col col-waiting">
+                        <h3>Order Mới (Waiting)</h3>
+                        <div id="kitchen-ordered-list" class="kanban-list"></div>
+                    </div>
+                    <div class="kanban-col col-cooking">
+                        <h3>Đang nấu (Cooking)</h3>
+                        <div id="kitchen-cooking-list" class="kanban-list"></div>
+                    </div>
+                    <div class="kanban-col col-ready">
+                        <h3>Sẵn sàng (Ready)</h3>
+                        <div id="kitchen-ready-list" class="kanban-list"></div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="menu-admin-page" class="page" style="display: none;">
+                <div class="admin-container">
+                    <div class="page-header">
+                        <h2>Quản lý Menu</h2>
+                        <button class="btn-primary-action"><i class='bx bx-plus'></i> Thêm món</button>
+                    </div>
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Tên món</th>
+                                <th>Giá</th>
+                                <th>Danh mục</th>
+                                <th>Trạng thái</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-menu-table">
+                            </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="settings-page" class="page" style="display: none;">
+                <div class="page-header">
+                    <h2>Cài đặt</h2>
+                </div>
+                <div id="settings-container" class="settings-wrapper">
                     </div>
             </section>
         </main>
 
-        <aside class="order-panel">
+        <aside class="order-panel" id="main-order-panel">
             <div class="order-header">
                 <div>
-                    <h2>Bàn 4</h2>
-                    <span>Quản lý</span>
+                    <h2>Order</h2>
+                    <span>Hóa đơn tạm tính</span>
                 </div>
                 <button class="edit-btn"><i class='bx bx-edit-alt'></i></button>
             </div>
@@ -92,40 +148,40 @@
             </div>
 
             <div class="payment-section">
-                <div class="summary-row">
-                    <span>Tổng thu</span>
-                    <span id="sub-total">0</span>
-                </div>
-                <div class="summary-row">
-                    <span>Thuế (5%)</span>
-                    <span id="tax-amount">0</span>
-                </div>
-                <div class="summary-divider"></div>
-                <div class="summary-row total">
-                    <span>Tổng số tiền</span>
-                    <span id="final-total">0</span>
+                <div class="summary-box">
+                    <div class="summary-row">
+                        <span>Tổng thu</span>
+                        <span id="sub-total">0đ</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Thuế (5%)</span>
+                        <span id="tax-amount">0đ</span>
+                    </div>
+                    <div class="summary-divider"></div>
+                    <div class="summary-row total">
+                        <span>Tổng số tiền</span>
+                        <span id="final-total">0đ</span>
+                    </div>
                 </div>
 
                 <div class="payment-methods">
-                    <button class="method-card active">
-                        <i class='bx bx-money'></i>
-                        <span>Tiền mặt</span>
-                    </button>
-                    <button class="method-card">
-                        <i class='bx bx-credit-card'></i>
-                        <span>Thẻ</span>
-                    </button>
-                    <button class="method-card">
-                        <i class='bx bx-qr-scan'></i>
-                        <span>Mã QR</span>
-                    </button>
+                    <button class="method-card active"><i class='bx bx-money'></i><span>Tiền mặt</span></button>
+                    <button class="method-card"><i class='bx bx-credit-card'></i><span>Thẻ</span></button>
+                    <button class="method-card"><i class='bx bx-qr-scan'></i><span>QR</span></button>
                 </div>
 
-                <button class="place-order-btn" onclick="app.submitOrder()">Thanh toán</button>
+                <button class="place-order-btn" onclick="app.submitOrder()">Đặt món</button>
             </div>
         </aside>
     </div>
 
-    <script src="assets/js/app.js"></script>
+    <script src="src/js/api.js"></script>
+    <script src="src/js/TableManager.js"></script>
+    <script src="src/js/KitchenMonitor.js"></script>
+    <script src="src/js/MenuManager.js"></script>
+    <script src="src/js/Menu.js"></script>
+    <script src="src/js/Settings.js"></script>
+    <script src="src/js/auth.js"></script>
+    
 </body>
 </html>

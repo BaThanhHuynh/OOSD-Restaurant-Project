@@ -1,0 +1,223 @@
+/* frontend/src/css/login.css */
+:root {
+    --primary: #187a42;
+    --primary-dark: #145c32;
+    --bg-light: #F3F4F6;
+    --text-dark: #1F2937;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+
+body {
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-light);
+}
+
+.login-container {
+    background: white;
+    width: 900px;
+    height: 600px;
+    border-radius: 24px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+    display: flex;
+    overflow: hidden;
+}
+
+/* --- Form Side --- */
+.forms-wrapper {
+    flex: 1;
+    padding: 40px;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.auth-form {
+    width: 100%;
+    max-width: 320px;
+    margin: 0 auto;
+    display: none;
+    animation: fadeIn 0.4s ease;
+}
+.auth-form.active { display: block; }
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.header { margin-bottom: 30px; text-align: center; }
+.logo-icon { 
+    width: 50px; height: 50px; background: #E8F5E9; color: var(--primary);
+    border-radius: 12px; display: flex; align-items: center; justify-content: center;
+    font-size: 28px; margin: 0 auto 15px; 
+}
+.header h2 { font-size: 22px; color: var(--text-dark); margin-bottom: 5px; }
+.header p { font-size: 13px; color: #6B7280; }
+
+.input-group { margin-bottom: 15px; }
+.input-group label { display: block; font-size: 12px; font-weight: 500; margin-bottom: 5px; color: #374151; }
+.input-field {
+    position: relative;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    transition: 0.2s;
+}
+.input-field:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px #E8F5E9; }
+.input-field i { color: #9CA3AF; font-size: 18px; }
+.input-field input {
+    width: 100%;
+    border: none;
+    padding: 12px 10px;
+    outline: none;
+    font-size: 14px;
+}
+
+.actions { display: flex; justify-content: space-between; align-items: center; font-size: 12px; margin-bottom: 20px; }
+.actions a { color: var(--primary); text-decoration: none; font-weight: 500; }
+
+.btn-submit {
+    width: 100%;
+    background: var(--primary);
+    color: white;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    font-size: 14px;
+}
+.btn-submit:hover { background: var(--primary-dark); }
+
+.switch-form { text-align: center; margin-top: 20px; font-size: 13px; }
+.switch-form a { color: var(--primary); font-weight: 600; text-decoration: none; }
+
+/* --- Decoration Side --- */
+.decoration-side {
+    flex: 1;
+    position: relative; /* Để chứa các phần tử tuyệt đối */
+    background: #000;   /* Màu nền dự phòng */
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Khung chứa ảnh Slider */
+.slider-wrapper {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 1;
+}
+
+.slide {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 0.8s ease-in-out;
+    transform: scale(1.05); /* Zoom nhẹ để tạo cảm giác sâu */
+}
+
+.slide.active {
+    opacity: 1;
+    z-index: 2;
+}
+
+/* Overlay Text (Chữ giới thiệu) */
+.intro-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    padding: 60px 40px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); /* Đen mờ dần xuống dưới */
+    color: white;
+    text-align: center;
+}
+
+.intro-overlay h1 {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+.intro-overlay p {
+    font-size: 14px;
+    opacity: 0.9;
+    font-weight: 300;
+}
+
+/* Nút điều hướng (Trái/Phải) */
+.nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 20;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    backdrop-filter: blur(5px);
+}
+
+.nav-btn:hover {
+    background: white;
+    color: var(--primary);
+}
+
+.nav-btn.prev { left: 20px; }
+.nav-btn.next { right: 20px; }
+
+/* Dấu chấm chỉ dẫn ở dưới */
+.dots-container {
+    position: absolute;
+    bottom: 30px;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    background: rgba(255,255,255,0.4);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.dot.active {
+    background: white;
+    width: 24px;
+    border-radius: 10px;
+}
+
+/* Bong bóng trang trí */
+.circles div {
+    position: absolute;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+}
+.circles div:nth-child(1) { width: 200px; height: 200px; top: -50px; right: -50px; }
+.circles div:nth-child(2) { width: 300px; height: 300px; bottom: -100px; left: -50px; }
