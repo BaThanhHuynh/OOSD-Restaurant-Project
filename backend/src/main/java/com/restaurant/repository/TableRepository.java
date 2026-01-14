@@ -22,13 +22,10 @@ public class TableRepository {
     public TableRepository() {
         tables = new ArrayList<>();
         
-        // Fake data để test
-        tables.add(new Table(1, 101, 4));
-        tables.add(new Table(2, 102, 2));
-        tables.add(new Table(3, 103, 6));
+        for (int i = 1; i <= 50; i++) {
+            tables.add(new Table(i, 100 + i, 4)); 
+        }
     }
-
-    // 5. Xóa hàm getInstance() -> Spring sẽ tự "tiêm" (inject) class này vào Service
 
     // --- CÁC HÀM LOGIC DƯỚI ĐÂY GIỮ NGUYÊN 100% ---
 
@@ -43,7 +40,6 @@ public class TableRepository {
     }
 
     public void save(Table table) {
-        // Logic: Nếu tồn tại thì xóa cái cũ đi rồi add cái mới (Update)
         findById(table.getId()).ifPresent(exist -> tables.remove(exist));
         tables.add(table);
     }

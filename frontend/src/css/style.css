@@ -1,3 +1,6 @@
+/* =========================================
+   VARIABLES & GLOBAL STYLES
+   ========================================= */
 :root {
     --primary: #187a42;
     --primary-light: #E8F5E9;
@@ -43,7 +46,7 @@ li { list-style: none; }
 .user-info h4 { font-size: 14px; }
 .user-info span { font-size: 12px; color: var(--text-gray); }
 .logout-btn { border: none; background: none; color: var(--text-gray); cursor: pointer; display: flex; align-items: center; gap: 10px; padding-left: 10px; font-weight: 500; }
-.logout-btn :hover { color: var(--danger); }
+.logout-btn:hover { color: var(--danger); }
 
 /* =========================================
    MAIN CONTENT: TOP BAR & CATEGORIES
@@ -97,21 +100,19 @@ li { list-style: none; }
     box-shadow: var(--shadow-hover); 
 }
 
-/* Ảnh hình chữ nhật, to hơn (140px) */
 .card-img-placeholder { 
     width: 100%; 
     height: 140px; 
     background: #f3f4f6; 
     border-radius: 10px; 
     margin: 0 0 10px 0; 
-    /* Xóa display flex/center cũ vì giờ dùng thẻ img */
-    overflow: hidden; /* Quan trọng để bo tròn góc ảnh */
+    overflow: hidden; 
     position: relative;
 }
 .card-img-placeholder img {
     width: 100%;
     height: 100%;
-    object-fit: cover; /* Giúp ảnh lấp đầy khung mà không bị méo */
+    object-fit: cover; 
     display: block;
 }
 .card-img-placeholder span {transition: transform 0.3s; display: none; }
@@ -156,7 +157,6 @@ li { list-style: none; }
 }
 .btn-add:hover { background: var(--primary); color: white; }
 
-/* Quantity Control: Nền xám, Nút Trắng/Xanh */
 .qty-control-grid {
     display: flex;
     align-items: center;
@@ -223,9 +223,8 @@ li { list-style: none; }
     background: #f3f4f6; 
     border-radius: 8px; 
     margin-right: 12px; 
-    /* Thêm 2 dòng này để bo tròn góc ảnh */
     overflow: hidden; 
-    flex-shrink: 0;   /* Không cho ảnh bị co lại */
+    flex-shrink: 0; 
 }
 .item-img img {
     width: 100%;
@@ -306,13 +305,35 @@ li { list-style: none; }
     box-shadow: var(--shadow-sm);
 }
 
-/* --- TABLE MANAGER PAGE --- */
+/* --- TABLE MANAGER PAGE (WITH SCROLLBAR) --- */
+.page {
+    flex: 1;                
+    display: flex;          
+    flex-direction: column; 
+    min-height: 0;          
+    overflow: hidden;       
+}
+
 .table-grid-container {
+    /* 1. Giới hạn chiều cao: Lấy 100% chiều cao màn hình TRỪ ĐI phần Header (khoảng 180px) */
+    height: calc(100vh - 180px); 
+    
+    /* 2. Tự động hiện thanh trượt khi nội dung tràn */
+    overflow-y: auto; 
+    
+    /* 3. Giữ nguyên Grid layout cũ */
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 20px;
-    padding-bottom: 50px;
+    padding-bottom: 20px; /* Đệm dưới cùng để không bị che mất bàn cuối */
+    padding-right: 10px; /* Đệm phải để chữ không dính vào thanh trượt */
 }
+
+/* --- TÙY CHỈNH THANH TRƯỢT CHO ĐẸP --- */
+.table-grid-container::-webkit-scrollbar { width: 8px; }
+.table-grid-container::-webkit-scrollbar-track { background: #f1f2f6; border-radius: 4px; }
+.table-grid-container::-webkit-scrollbar-thumb { background: #bdc3c7; border-radius: 4px; }
+.table-grid-container::-webkit-scrollbar-thumb:hover { background: #95a5a6; }
 
 .table-card {
     background: white;
@@ -361,7 +382,6 @@ li { list-style: none; }
     box-shadow: var(--shadow-sm);
 }
 
-/* Màu sắc chỉ dẫn cho cột */
 .col-waiting { border-top: 5px solid #EF4444; }
 .col-cooking { border-top: 5px solid #F59E0B; }
 .col-ready { border-top: 5px solid #10B981; }
@@ -501,13 +521,7 @@ li { list-style: none; }
     transition: 0.2s;
 }
 .btn-save:hover { background: #168045; transform: translateY(-2px); }
-.page {
-    flex: 1;                /* Chiếm toàn bộ không gian còn lại dưới thanh Top Bar */
-    display: flex;          /* Biến thành Flexbox */
-    flex-direction: column; /* Xếp dọc các phần tử con */
-    min-height: 0;          /* Quan trọng: Cho phép các phần tử con co lại để hiện thanh cuộn */
-    overflow: hidden;       /* Ẩn phần thừa của chính nó */
-}
+
 /* RESPONSIVE */
 @media (max-width: 1024px) {
     .order-panel { display: none; }
