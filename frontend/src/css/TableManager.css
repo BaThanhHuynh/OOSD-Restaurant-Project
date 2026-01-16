@@ -1,0 +1,239 @@
+/* =========================================
+   TABLE MANAGER STYLES
+   ========================================= */
+
+.table-grid-container {
+    height: calc(100vh - 180px); 
+    overflow-y: auto; 
+    display: grid;
+    /* Tăng min-width lên 240px để thẻ bàn rộng hơn chút, chứa nút to cho thoải mái */
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); 
+    gap: 20px;
+    padding: 10px 10px 80px 10px;
+}
+
+/* Custom Scrollbar */
+.table-grid-container::-webkit-scrollbar { width: 6px; }
+.table-grid-container::-webkit-scrollbar-track { background: transparent; }
+.table-grid-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+.table-grid-container::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* --- THẺ BÀN (CARD) --- */
+.table-card {
+    background: var(--bg-white); 
+    padding: 20px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 2px solid transparent !important; 
+    box-shadow: var(--shadow-sm); 
+}
+
+.table-card:hover {
+    transform: translateY(-5px);
+    border-color: #e2e8f0 !important; 
+    box-shadow: var(--shadow-hover);
+}
+
+.table-card i { font-size: 48px; margin-bottom: 5px; color: #cbd5e1; transition: 0.3s; }
+.table-card h3 { font-size: 18px; font-weight: 700; color: var(--text-dark); margin: 0; }
+.table-card p.status-text { font-size: 14px; font-weight: 500; color: var(--text-gray); margin: 0; }
+
+/* --- TRẠNG THÁI: CÓ KHÁCH (OCCUPIED) --- */
+.table-card.occupied { 
+    background: var(--primary-light); 
+    border-color: transparent !important; 
+} 
+.table-card.occupied i { color: var(--primary); } 
+.table-card.occupied p.status-text { color: var(--primary); font-weight: 700; }
+.table-card.occupied:hover { border-color: var(--primary) !important; }
+
+/* --- CÁC NÚT BẤM (BUTTONS) - ĐÃ CHỈNH SỬA --- */
+/* Style chung cho nút trong thẻ */
+.btn-table-action {
+    width: 100%;
+    padding: 12px 10px; /* Tăng padding trên dưới lên 12px cho nút cao hơn */
+    border-radius: 12px; /* Bo góc tròn hơn chút cho khớp */
+    
+    /* CHỈNH CỠ CHỮ TO HƠN Ở ĐÂY */
+    font-size: 15px; 
+    font-weight: 700; /* Đậm hơn để rõ chữ */
+    
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px; /* Tăng khoảng cách icon và chữ */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Icon trong nút cũng to lên theo */
+.btn-table-action i {
+    font-size: 18px !important; /* Ghi đè size icon cũ */
+    color: inherit; /* Màu icon theo màu chữ nút */
+    margin: 0 !important;
+}
+
+/* 1. Nút Mở Bàn */
+.btn-open {
+    background: #f1f5f9;
+    color: #475569; /* Màu chữ đậm hơn xíu cho dễ đọc */
+}
+.btn-open:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+/* 2. Nút Gọi Món */
+.btn-order {
+    background: var(--primary);
+    color: white;
+    flex: 1.5; 
+}
+.btn-order:hover { 
+    background: #15803d;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+}
+
+/* 3. Nút Xem */
+.btn-view {
+    background: white;
+    border: 1px solid var(--primary); 
+    color: var(--primary);
+    flex: 1;
+    box-shadow: none;
+}
+.btn-view:hover { 
+    background: var(--primary-light); 
+}
+
+/* 4. Nút Thanh Toán */
+.btn-pay {
+    width: 100%;
+    background: white;
+    border: 1px solid var(--danger);
+    color: var(--danger);
+    margin-top: 10px; /* Cách xa nút trên 1 chút */
+    box-shadow: none;
+}
+.btn-pay:hover {
+    background: var(--danger);
+    color: white;
+    box-shadow: 0 4px 10px rgba(239, 68, 68, 0.25);
+}
+
+/* Nút Xóa Bàn (Admin) */
+.btn-delete-table {
+    position: absolute; top: 12px; right: 12px;
+    border: none; background: white; color: var(--danger);
+    width: 32px; height: 32px; /* To hơn chút để dễ bấm */
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; opacity: 0; transition: 0.2s;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    font-size: 18px; /* Icon to hơn */
+}
+.table-card:hover .btn-delete-table { opacity: 1; }
+.btn-delete-table:hover { background: var(--danger); color: white; }
+
+/* =========================================
+   MODAL THANH TOÁN (Giữ nguyên)
+   ========================================= */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5); z-index: 2000;
+    display: flex; justify-content: center; align-items: center;
+    backdrop-filter: blur(4px);
+}
+.modal-content {
+    background: white; width: 450px; border-radius: var(--radius-lg);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.2); 
+    overflow: hidden; animation: zoomIn 0.2s ease;
+}
+@keyframes zoomIn { from {transform: scale(0.95); opacity: 0;} to {transform: scale(1); opacity: 1;} }
+
+.modal-header {
+    background: var(--primary); color: white; padding: 16px 24px;
+    display: flex; justify-content: space-between; align-items: center;
+}
+.modal-header h3 { font-size: 18px; font-weight: 600; margin: 0; }
+.btn-close { background: none; border: none; color: white; font-size: 24px; cursor: pointer; opacity: 0.8; }
+.btn-close:hover { opacity: 1; }
+
+.modal-body { padding: 24px; max-height: 550px; overflow-y: auto; }
+.modal-payment-options {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px dashed #e2e8f0;
+}
+
+.modal-payment-options p {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-gray);
+    margin-bottom: 10px;
+}
+
+.payment-grid {
+    display: flex;
+    gap: 10px;
+}
+
+.pay-method {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--text-gray);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.pay-method i {
+    font-size: 24px;
+    margin-bottom: 2px;
+}
+
+/* Trạng thái được chọn (Active) */
+.pay-method.active {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    color: var(--primary);
+    font-weight: 700;
+}
+
+.pay-method:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+.bill-list { margin-bottom: 20px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 15px; }
+.bill-item { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 15px; color: var(--text-dark); }
+.bill-summary { text-align: right; font-size: 16px; color: var(--text-gray); }
+.bill-summary strong { color: var(--danger); font-size: 24px; font-weight: 700; display: block; margin-top: 5px; }
+
+.modal-footer { padding: 16px 24px; background: #f8fafc; display: flex; gap: 12px; justify-content: flex-end; }
+.btn-cancel { 
+    padding: 12px 20px; border: 1px solid #cbd5e1; background: white; 
+    border-radius: 10px; cursor: pointer; font-weight: 600; color: #64748b;
+    transition: 0.2s;
+}
+.btn-cancel:hover { background: #f1f5f9; color: var(--text-dark); }
+.btn-confirm-pay { 
+    padding: 12px 24px; background: var(--primary); color: white; 
+    border: none; border-radius: 10px; font-weight: 600; cursor: pointer; 
+    box-shadow: 0 4px 12px rgba(24, 122, 66, 0.3);
+    transition: 0.2s;
+}
+.btn-confirm-pay:hover { background: #15803d; transform: translateY(-1px); }

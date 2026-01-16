@@ -6,26 +6,16 @@ const auth = {
         this.checkLoginStatus();
     },
 
-    // Kiểm tra trạng thái đăng nhập
     checkLoginStatus: function() {
         const user = localStorage.getItem('user_token');
-        const isLoginPage = window.location.pathname.includes('login.html');
+        const isLoginPage = window.location.pathname.includes('Login.html') || window.location.pathname.includes('login.html'); // Check cả 2 trường hợp hoa thường
 
-        // Nếu đã có token mà đang ở trang login thì chuyển sang trang chủ
         if (user && isLoginPage) {
             window.location.href = 'index.html';
-        }
-        
-        // (Optional) Nếu chưa có token mà KHÔNG phải trang login thì đá về login
-        // Logic này hiện tại đang được xử lý cả ở Menu.js, giữ ở đây để an toàn thêm
-        if (!user && !isLoginPage) {
-            // Uncomment dòng dưới nếu muốn auth.js chịu trách nhiệm bảo vệ toàn bộ trang
-            // window.location.href = 'login.html';
         }
     },
 
     bindEvents: function() {
-        // Xử lý sự kiện Submit Đăng nhập
         const loginForm = document.getElementById('login-form');
         if(loginForm) {
             loginForm.addEventListener('submit', (e) => {
@@ -34,7 +24,6 @@ const auth = {
             });
         }
 
-        // Xử lý sự kiện Submit Đăng ký
         const regForm = document.getElementById('register-form');
         if(regForm) {
             regForm.addEventListener('submit', (e) => {
@@ -43,6 +32,25 @@ const auth = {
             });
         }
     },
+
+    // --- HÀM MỚI: Tự động điền thông tin khi chọn menu ---
+    quickLogin: function(roleValue) {
+        if (!roleValue) return;
+
+        const usernameInput = document.getElementById('login-username');
+        const passwordInput = document.getElementById('login-password');
+
+        // Tự động điền username
+        usernameInput.value = roleValue;
+        
+        // Tự động điền pass (để demo cho nhanh)
+        passwordInput.value = '123456'; 
+
+        // Hiệu ứng nháy nhẹ ô input để báo hiệu đã điền
+        usernameInput.style.backgroundColor = '#e8f5e9';
+        setTimeout(() => usernameInput.style.backgroundColor = 'transparent', 300);
+    },
+    // -----------------------------------------------------
 
     switchMode: function(mode) {
         document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
@@ -55,22 +63,33 @@ const auth = {
 
     handleLogin: function() {
         const usernameInput = document.getElementById('login-username');
-        const username = usernameInput ? usernameInput.value : '';
+        const username = usernameInput ? usernameInput.value.trim() : '';
 
-        // Giả lập check login (Trong thực tế sẽ gọi API)
         if (username) {
-            // Lưu token giả vào localStorage
+            // Logic xác định quyền dựa trên username (giống logic cũ để khớp với app.js)
+            let role = 'admin'; 
+            let name = 'Quản lý';
+
+            if (username === 'thungan') {
+                role = 'cashier';
+                name = 'Thu Ngân';
+            } else if (username === 'nhanvien') {
+                role = 'staff';
+                name = 'Nhân Viên';
+            }
+
             const userData = {
-                name: "Quản lý Demo", // Có thể thay bằng username nếu muốn
-                role: "admin",
+                name: name,
+                role: role,
                 username: username
             };
+            
             localStorage.setItem('user_token', JSON.stringify(userData));
             
-            alert('Đăng nhập thành công!');
+            // Chuyển trang
             window.location.href = 'index.html';
         } else {
-            alert('Vui lòng nhập tên đăng nhập');
+            alert('Vui lòng nhập tên đăng nhập hoặc chọn vai trò!');
         }
     },
 
@@ -82,19 +101,16 @@ const auth = {
             alert('Mật khẩu xác nhận không khớp!');
             return;
         }
-
         alert('Đăng ký thành công! Vui lòng đăng nhập.');
         this.switchMode('login');
     },
 
-    // Hàm gọi khi bấm nút Đăng xuất (dùng ở trang index.html)
     logout: function() {
         if(confirm('Bạn có chắc muốn đăng xuất?')) {
             localStorage.removeItem('user_token');
-            window.location.href = 'login.html';
+            window.location.href = 'Login.html';
         }
     }
 };
 
-// Chạy auth
 auth.init();

@@ -1,37 +1,88 @@
 /**
- * Settings Module
- * Quản lý cấu hình hệ thống
+ * Settings Module (Đã sửa lỗi hiển thị)
+ * File: frontend/src/js/Settings.js
  */
 const settingsApp = {
     // Cấu hình mặc định
     config: {
         restaurantName: "4TL RES POS",
         address: "123 Đường ABC, Quận 1, TP.HCM",
-        taxRate: 5, // %
+        taxRate: 5,
         currency: "VND"
     },
 
     init: function() {
+        console.log("Settings App Initializing..."); // Log để kiểm tra
         this.loadConfig();
         this.render();
     },
 
-    // Tải cấu hình từ LocalStorage (nếu có)
     loadConfig: function() {
-        const saved = localStorage.getItem('pos_config');
-        if (saved) {
-            this.config = { ...this.config, ...JSON.parse(saved) };
+        try {
+            const saved = localStorage.getItem('pos_config');
+            if (saved) {
+                this.config = { ...this.config, ...JSON.parse(saved) };
+            }
+            // Cập nhật logo nếu có
+            const logoTitle = document.querySelector('.logo h2');
+            if(logoTitle) logoTitle.textContent = this.config.restaurantName;
+        } catch (e) {
+            console.error("Lỗi load config:", e);
         }
-        // Cập nhật tên hiển thị trên Sidebar ngay khi load
-        const logoTitle = document.querySelector('.logo h2');
-        if(logoTitle) logoTitle.textContent = this.config.restaurantName;
     },
 
-    // Render giao diện Settings
     render: function() {
         const container = document.getElementById('settings-container');
-        if (!container) return;
+        if (!container) {
+            console.error("Không tìm thấy div #settings-container trong HTML!");
+            return;
+        }
 
+        // --- XỬ LÝ QUYỀN AN TOÀN ---
+        let isAdmin = false;
+        try {
+            const token = localStorage.getItem('user_token');
+            if (token) {
+                const user = JSON.parse(token);
+                isAdmin = (user.role === 'admin');
+            }
+        } catch (e) {
+            console.error("Lỗi đọc user token:", e);
+        }
+
+        // --- CHUẨN BỊ GIAO DIỆN ---
+        const disableAttr = isAdmin ? '' : 'disabled';
+        const bgStyle = isAdmin ? '' : 'style="background-color: #f8fafc; cursor: not-allowed; color: #94a3b8;"';
+
+        // HTML Vùng nguy hiểm (Chỉ Admin thấy)
+        const dangerZoneHtml = isAdmin ? `
+            <div class="settings-card danger-zone">
+                <div class="card-header">
+                    <h3><i class='bx bx-error-circle'></i> Vùng nguy hiểm</h3>
+                </div>
+                <p style="margin-bottom: 15px; color: #dc2626; font-size: 13px;">
+                    Các hành động dưới đây sẽ xóa toàn bộ dữ liệu cài đặt của trình duyệt.
+                </p>
+                <button class="btn-danger-action" onclick="settingsApp.resetSystem()">
+                    <i class='bx bx-trash'></i> Reset hệ thống
+                </button>
+            </div>
+        ` : '';
+
+        // HTML Nút lưu (Chỉ Admin bấm được)
+        const footerHtml = isAdmin ? `
+            <div class="settings-footer">
+                <button class="btn-save" onclick="settingsApp.saveSettings()">
+                    <i class='bx bx-save'></i> Lưu thay đổi
+                </button>
+            </div>
+        ` : `
+            <div class="settings-footer" style="text-align:center; color:#94a3b8; font-style:italic; margin-top:20px;">
+                * Chỉ tài khoản Quản lý (Admin) mới có quyền chỉnh sửa.
+            </div>
+        `;
+
+        // --- VẼ HTML VÀO CONTAINER ---
         container.innerHTML = `
             <div class="settings-card">
                 <div class="card-header">
@@ -40,11 +91,13 @@ const settingsApp = {
                 <div class="form-row">
                     <div class="form-group">
                         <label>Tên nhà hàng</label>
-                        <input type="text" id="set-name" value="${this.config.restaurantName}" placeholder="Nhập tên nhà hàng">
+                        <input type="text" id="set-name" value="${this.config.restaurantName}" 
+                            ${disableAttr} ${bgStyle}>
                     </div>
                     <div class="form-group">
                         <label>Địa chỉ</label>
-                        <input type="text" id="set-address" value="${this.config.address}" placeholder="Nhập địa chỉ">
+                        <input type="text" id="set-address" value="${this.config.address}" 
+                            ${disableAttr} ${bgStyle}>
                     </div>
                 </div>
             </div>
@@ -56,37 +109,24 @@ const settingsApp = {
                 <div class="form-row">
                     <div class="form-group">
                         <label>Thuế VAT (%)</label>
-                        <input type="number" id="set-tax" value="${this.config.taxRate}" min="0" max="100">
+                        <input type="number" id="set-tax" value="${this.config.taxRate}" 
+                            min="0" max="100" ${disableAttr} ${bgStyle}>
                     </div>
                     <div class="form-group">
                         <label>Đơn vị tiền tệ</label>
-                        <select id="set-currency" disabled style="background: #f3f4f6;">
-                            <option value="VND">VND (Việt Nam Đồng)</option>
+                        <select id="set-currency" disabled style="background: #f1f5f9; cursor: not-allowed;">
+                            <option value="VND" selected>VND (Việt Nam Đồng)</option>
                             <option value="USD">USD (Đô la Mỹ)</option>
                         </select>
                     </div>
                 </div>
             </div>
 
-            <div class="settings-card danger-zone">
-                <div class="card-header">
-                    <h3><i class='bx bx-error-circle'></i> Vùng nguy hiểm</h3>
-                </div>
-                <p style="margin-bottom: 15px; color: #666; font-size: 13px;">Các hành động dưới đây sẽ ảnh hưởng đến dữ liệu hệ thống.</p>
-                <button class="btn-danger-action" onclick="settingsApp.resetSystem()">
-                    <i class='bx bx-trash'></i> Xóa dữ liệu & Reset hệ thống
-                </button>
-            </div>
-
-            <div class="settings-footer">
-                <button class="btn-save" onclick="settingsApp.saveSettings()">
-                    <i class='bx bx-save'></i> Lưu thay đổi
-                </button>
-            </div>
+            ${dangerZoneHtml}
+            ${footerHtml}
         `;
     },
 
-    // Lưu cài đặt
     saveSettings: function() {
         const name = document.getElementById('set-name').value;
         const address = document.getElementById('set-address').value;
@@ -98,22 +138,22 @@ const settingsApp = {
         this.config.address = address;
         this.config.taxRate = parseInt(tax);
 
-        // Lưu vào LocalStorage
         localStorage.setItem('pos_config', JSON.stringify(this.config));
-
-        // Cập nhật UI ngay lập tức
-        document.querySelector('.logo h2').textContent = this.config.restaurantName;
         
-        // Cập nhật lại logic tính thuế bên trang POS (nếu cần thiết có thể reload trang)
-        // Ở đây ta gọi alert thông báo
+        // Cập nhật UI ngay lập tức
+        const logoTitle = document.querySelector('.logo h2');
+        if(logoTitle) logoTitle.textContent = name;
+
         alert("Đã lưu cấu hình thành công!");
     },
 
-    // Reset dữ liệu (Giả lập)
     resetSystem: function() {
-        if (confirm("CẢNH BÁO: Hành động này sẽ xóa toàn bộ cài đặt đã lưu trong trình duyệt. Bạn có chắc chắn không?")) {
+        if (confirm("CẢNH BÁO: Bạn có chắc muốn xóa cấu hình và tải lại trang?")) {
             localStorage.removeItem('pos_config');
-            location.reload(); // Tải lại trang để về mặc định
+            location.reload();
         }
     }
 };
+
+// Đảm bảo window gọi được
+window.settingsApp = settingsApp;

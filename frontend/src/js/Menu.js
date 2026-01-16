@@ -1,80 +1,77 @@
 /**
- * Main App Logic
+ * MENU POS LOGIC (BÁN HÀNG)
  * File: frontend/src/js/Menu.js
  */
 
-const DATA = {
+const menuData = {
     categories: [
         { id: 'all', name: 'Tất cả', icon: 'bx-grid-alt', count: 235 },
         { id: 'food', name: 'Đồ ăn', icon: 'bx-dish', count: 120 },
         { id: 'drinks', name: 'Thức uống', icon: 'bx-coffee-togo', count: 60 },
         { id: 'dessert', name: 'Tráng miệng', icon: 'bx-cake', count: 40 },
-        { id: 'pasta', name: 'Món thêm', icon: 'bx-plus-circle', count: 15 },
     ],
     products: [
-        // Lưu ý: Đảm bảo file ảnh tồn tại trong thư mục src/assets/
         { id: 1, name: 'Phở bò đặc biệt', price: 55000, img: 'src/assets/Pho.jpg', cat: 'food', badge: 'Hot' },
-        { id: 2, name: 'Bún bò Huế', price: 65000, img: 'src/assets/Bun_bo.jpg', cat: 'pasta' },
-        { id: 3, name: 'Bún chả Hà Nội', price: 60000, img: 'src/assets/Bun_cha_HN.jpg', cat: 'food' },
-        { id: 4, name: 'Cơm tấm sườn bì', price: 45000, img: 'src/assets/Com_tam.jpg', cat: 'food', badge: '-15%' },
-        { id: 5, name: 'Nước ép cam', price: 35000, img: 'src/assets/Nuoc_cam.jpg', cat: 'drinks' },
-        { id: 6, name: 'Bánh flan', price: 20000, img: 'src/assets/Banh_flan.jpg', cat: 'dessert' },
-        { id: 7, name: 'Gà nướng', price: 120000, img: 'src/assets/Ga_nuong.jpg', cat: 'food' },
-        { id: 8, name: 'Cà phê sữa', price: 25000, img: 'src/assets/Ca_phe_sua.jpg', cat: 'drinks' },
-        { id: 9, name: 'Trà đào cam sả', price: 40000, img: 'src/assets/Tra_dao.jpg', cat: 'drinks' },
+        { id: 2, name: 'Bún bò Huế', price: 65000, img: 'src/assets/Bun_bo.jpg', cat: 'food' },
+        { id: 3, name: 'Cơm tấm sườn bì', price: 45000, img: 'src/assets/Com_tam.jpg', cat: 'food', badge: '-15%' },
+        { id: 4, name: 'Nước ép cam', price: 35000, img: 'src/assets/Nuoc_cam.jpg', cat: 'drinks' },
+        { id: 5, name: 'Trà đào cam sả', price: 40000, img: 'src/assets/Tra_dao.jpg', cat: 'drinks' },
+        { id: 6, name: 'Bánh flan', price: 25000, img: 'src/assets/Banh_flan.jpg', cat: 'dessert' },
+        { id: 8, name: 'Cà phê sữa', price: 30000, img: 'src/assets/Ca_phe_sua.jpg', cat: 'drinks' },
+        { id: 10, name: 'Gà nướng', price: 20000, img: 'src/assets/Ga_nuong.jpg', cat: 'food' },
+        { id: 11, name: 'Bún chả Hà Nội', price: 30000, img: 'src/assets/Bun_cha_HN.jpg', cat: 'food' },
     ]
 };
 
-const app = {
+const menuApp = {
     state: {
         currentCat: 'all',
         cart: [],
         tables: [
             { id: 1, name: 'Phở', status: 'Đang nấu', items: 4 },
-            { id: 2, name: 'Cơm tấm', status: 'Sẵn sàng', items: 2 },
-            { id: 3, name: 'Bún bò', status: 'Lên món', items: 5 },
-            { id: 4, name: 'Bún chả Hà Nội', status: 'Tính tiền', items: 3}
+            { id: 2, name: 'Cơm tấm', status: 'Sẵn sàng', items: 2 }
         ]
     },
 
     init: function() {
-        // --- 1. KIỂM TRA ĐĂNG NHẬP (MỚI) ---
+        // Chỉ chạy nếu đang ở trang có lưới sản phẩm
+        if (!document.getElementById('product-grid')) return;
+
+        this.checkAuth();
+        this.renderCategories();
+        this.renderProducts();
+        this.renderCart();
+        this.renderTablesStatus();
+    },
+
+    checkAuth: function() {
         const userToken = localStorage.getItem('user_token');
         if (!userToken) {
-            // Nếu chưa đăng nhập, đá về trang login
-            window.location.href = 'login.html';
+            window.location.href = 'Login.html';
             return;
         }
-
-        // --- 2. CẬP NHẬT THÔNG TIN USER LÊN SIDEBAR (MỚI) ---
         try {
             const userData = JSON.parse(userToken);
             const userNameEl = document.querySelector('.user-info h4');
             const userRoleEl = document.querySelector('.user-info span');
             
-            if (userNameEl) userNameEl.textContent = userData.name || userData.username;
-            if (userRoleEl) userRoleEl.textContent = (userData.role === 'admin') ? 'Quản lý' : 'Nhân viên';
-        } catch (e) {
-            console.error('Lỗi đọc dữ liệu user:', e);
-        }
-
-        // --- 3. RENDER GIAO DIỆN ---
-        this.renderCategories();
-        this.renderProducts();
-        this.renderTablesStatus();
-        this.renderCart();
+            if (userNameEl) userNameEl.textContent = userData.name;
+            if (userRoleEl) userRoleEl.textContent = (userData.role === 'admin') ? 'Quản lý' : (userData.role === 'cashier' ? 'Thu ngân' : 'Nhân viên');
+        } catch (e) { console.error(e); }
     },
 
     formatMoney: function(amount) {
         return amount.toLocaleString('vi-VN') + 'đ';
     },
 
-    // --- RENDER FUNCTIONS ---
+    // --- RENDER GIAO DIỆN BÁN HÀNG ---
     renderCategories: function() {
         const container = document.getElementById('categories-list');
-        container.innerHTML = DATA.categories.map(cat => `
+        if (!container) return;
+
+        container.innerHTML = menuData.categories.map(cat => `
             <div class="cat-item ${this.state.currentCat === cat.id ? 'active' : ''}" 
-                 onclick="app.filterCategory('${cat.id}')">
+                 onclick="menuApp.filterCategory('${cat.id}')">
                 <div class="cat-icon"><i class='bx ${cat.icon}'></i></div>
                 <span class="cat-name">${cat.name}</span>
                 <span class="cat-count">${cat.count} món</span>
@@ -84,36 +81,32 @@ const app = {
 
     renderProducts: function() {
         const container = document.getElementById('product-grid');
+        if (!container) return;
+
         const filtered = this.state.currentCat === 'all' 
-            ? DATA.products 
-            : DATA.products.filter(p => p.cat === this.state.currentCat);
+            ? menuData.products 
+            : menuData.products.filter(p => p.cat === this.state.currentCat);
 
         container.innerHTML = filtered.map(product => {
             const inCart = this.state.cart.find(i => i.id === product.id);
-
-            // Nếu đã có trong giỏ, click vào thẻ sẽ không làm gì (để người dùng dùng nút +/-)
-            // Nếu chưa có, click vào thẻ sẽ thêm món
-            const cardAction = !inCart ? `onclick="app.addToCart(${product.id})"` : '';
+            const cardAction = !inCart ? `onclick="menuApp.addToCart(${product.id})"` : '';
 
             return `
             <div class="product-card" ${cardAction}>
                 <div class="card-img-placeholder">
-                    <img src="${product.img}" alt="${product.name}" onerror="this.src='https://placehold.co/100?text=No+Img'">
+                    <img src="${product.img}" alt="${product.name}" onerror="this.src='https://placehold.co/100?text=IMG'">
                 </div>
-                
                 <h3>${product.name}</h3>
-
                 <div class="card-meta">
                     <span class="price">${this.formatMoney(product.price)}</span>
                     ${product.badge ? `<span class="badge-inline">${product.badge}</span>` : '<span></span>'}
                 </div>
-
                 <div class="card-footer">
                     ${inCart ? `
                         <div class="qty-control-grid" onclick="event.stopPropagation()">
-                            <button class="btn-qty" onclick="app.decreaseQty(${product.id})"><i class='bx bx-minus'></i></button>
+                            <button class="btn-qty" onclick="menuApp.decreaseQty(${product.id})"><i class='bx bx-minus'></i></button>
                             <span class="qty-num">${inCart.qty}</span>
-                            <button class="btn-qty" onclick="app.addToCart(${product.id})"><i class='bx bx-plus'></i></button>
+                            <button class="btn-qty" onclick="menuApp.addToCart(${product.id})"><i class='bx bx-plus'></i></button>
                         </div>
                     ` : `
                         <button class="btn-add">Thêm món</button>
@@ -125,6 +118,7 @@ const app = {
 
     renderCart: function() {
         const container = document.getElementById('cart-items');
+        if (!container) return;
         
         if (this.state.cart.length === 0) {
             container.innerHTML = `
@@ -139,17 +133,14 @@ const app = {
         container.innerHTML = this.state.cart.map(item => `
         <div class="order-item">
             <div class="item-img">
-                <img src="${item.img}" alt="${item.name}" onerror="this.src='https://placehold.co/40?text=Error'">
+                <img src="${item.img}" alt="${item.name}" onerror="this.src='https://placehold.co/40?text=Err'">
             </div>
-            
             <div class="item-info">
                 <h4>${item.name}</h4>
                 <span class="item-price">${this.formatMoney(item.price)}</span>
             </div>
-            
             <div class="item-qty-display">x${item.qty}</div>
-            
-            <button class="btn-remove-item" onclick="app.removeFromCart(${item.id})">
+            <button class="btn-remove-item" onclick="menuApp.removeFromCart(${item.id})">
                 <i class='bx bx-trash'></i>
             </button>
         </div>
@@ -160,7 +151,7 @@ const app = {
 
     renderTablesStatus: function() {
         const container = document.getElementById('tables-status-bar');
-        if (!container) return; // Phòng trường hợp đang ở trang khác không có status bar
+        if (!container) return;
 
         container.innerHTML = this.state.tables.map(t => `
             <div class="table-status-pill ${t.id === 1 ? 'active' : ''}">
@@ -173,68 +164,7 @@ const app = {
         `).join('');
     },
 
-    // --- NAVIGATION ---
-    loadPage: function(pageId, navId) {
-        // 1. Ẩn tất cả các sections
-        document.querySelectorAll('.page').forEach(page => {
-            page.style.display = 'none';
-            page.classList.remove('active');
-        });
-
-        // 2. Bỏ active ở menu cũ
-        document.querySelectorAll('.nav-item').forEach(nav => {
-            nav.classList.remove('active');
-        });
-
-        // 3. Hiện trang được chọn
-        const targetPage = document.getElementById(pageId);
-        if (targetPage) {
-            targetPage.style.display = 'block'; // Thay đổi từ flex sang block để tránh vỡ layout nếu có
-            // Nếu là trang POS, cần set lại display flex cho css .page hoạt động (nếu có set trong css)
-            // Tuy nhiên, ở css mới ta set .page { display: flex } nên ở đây cứ để remove display:none là được
-            targetPage.style.display = 'flex'; 
-            
-            setTimeout(() => targetPage.classList.add('active'), 10);
-        }
-
-        // 4. Active menu mới
-        if (navId) {
-            const navEl = document.getElementById(navId);
-            if(navEl) navEl.classList.add('active');
-        } else {
-            if(pageId === 'pos-page') {
-                const navPos = document.getElementById('nav-pos');
-                if(navPos) navPos.classList.add('active');
-            }
-        }
-
-        // 5. Logic riêng cho từng trang
-        const orderPanel = document.getElementById('main-order-panel');
-        
-        switch(pageId) {
-            case 'pos-page':
-                if(orderPanel) orderPanel.style.display = 'flex';
-                break;
-            case 'tables-page':
-                if(orderPanel) orderPanel.style.display = 'none';
-                if(typeof tableApp !== 'undefined') tableApp.init();
-                break;
-            case 'kitchen-page':
-                if(orderPanel) orderPanel.style.display = 'none';
-                if(typeof kitchenApp !== 'undefined') kitchenApp.init();
-                break;
-            case 'menu-admin-page':
-                if(orderPanel) orderPanel.style.display = 'none';
-                if(typeof adminMenuApp !== 'undefined') adminMenuApp.init();
-                break;
-            case 'settings-page':
-                if(orderPanel) orderPanel.style.display = 'none';
-                if(typeof settingsApp !== 'undefined') settingsApp.init();
-                break;
-        }
-    },
-
-    // --- ACTIONS ---
+    // --- LOGIC XỬ LÝ ---
     filterCategory: function(catId) {
         this.state.currentCat = catId;
         this.renderCategories();
@@ -242,7 +172,7 @@ const app = {
     },
 
     addToCart: function(id) {
-        const product = DATA.products.find(p => p.id === id);
+        const product = menuData.products.find(p => p.id === id);
         const exist = this.state.cart.find(i => i.id === id);
         
         if (exist) {
@@ -275,7 +205,7 @@ const app = {
 
     updateTotals: function() {
         const subTotal = this.state.cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
-        const tax = subTotal * 0.05; // 5% Thuế
+        const tax = subTotal * 0.05;
         const total = subTotal + tax;
 
         const subTotalEl = document.getElementById('sub-total');
@@ -289,17 +219,12 @@ const app = {
 
     submitOrder: function() {
         if(this.state.cart.length === 0) return alert("Vui lòng chọn món trước!");
-        
-        // Tại đây sau này sẽ gọi API.createOrder()
-        alert("Đặt món thành công! (Dữ liệu chưa gửi về server)");
-        
+        alert("Đã gửi order xuống bếp!");
         this.state.cart = [];
         this.renderCart();
         this.renderProducts();
     }
 };
 
-// Khởi tạo ứng dụng khi DOM load xong
-document.addEventListener('DOMContentLoaded', () => {
-    app.init();
-});
+window.menuApp = menuApp;
+document.addEventListener('DOMContentLoaded', () => { menuApp.init(); });

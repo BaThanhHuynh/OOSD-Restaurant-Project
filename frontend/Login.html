@@ -59,10 +59,21 @@
                 </div>
                 
                 <div class="input-group">
-                    <label>Tên đăng nhập</label>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                        <label style="margin-bottom: 0;">Tên đăng nhập</label>
+                        
+                        <select id="quick-role-select" onchange="auth.quickLogin(this.value)" 
+                                style="border: none; background: transparent; color: #187a42; font-size: 12px; font-weight: 600; cursor: pointer; outline: none;">
+                            <option value="">&#8226;&#8226;&#8226; Chọn vai trò &#8226;&#8226;&#8226;</option>
+                            <option value="admin">Quản lý (Admin)</option>
+                            <option value="thungan">Thu ngân</option>
+                            <option value="nhanvien">Nhân viên Order</option>
+                        </select>
+                    </div>
+
                     <div class="input-field">
                         <i class='bx bx-user'></i>
-                        <input type="text" id="login-username" placeholder="admin" required>
+                        <input type="text" id="login-username" placeholder="Chọn vai trò ở trên hoặc nhập..." required>
                     </div>
                 </div>
 

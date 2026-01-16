@@ -3,16 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chili POS System</title>
+    <title>4TL POS System</title>
     
-    <link rel="stylesheet" href="src/css/style.css">
-    <link rel="stylesheet" href="src/css/KitchenMonitor.css">
-    
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="src/css/style.css">          <link rel="stylesheet" href="src/css/Menu.css">           <link rel="stylesheet" href="src/css/MenuManager.css">    <link rel="stylesheet" href="src/css/TableManager.css">   <link rel="stylesheet" href="src/css/KitchenMonitor.css"> <link rel="stylesheet" href="src/css/Settings.css">       <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
 <body>
     <div class="app-container">
+        
         <aside class="sidebar">
             <div class="logo">
                 <div class="logo-icon"><i class='bx bxs-bowl-hot'></i></div>
@@ -20,32 +18,36 @@
             </div>
             
             <nav class="nav-menu">
-                <a href="#" class="nav-item active" id="nav-pos" onclick="app.loadPage('pos-page', 'nav-pos')">
+                <a href="#" class="nav-item" id="nav-pos" onclick="app.loadPage('pos-page', 'nav-pos'); return false;">
                     <i class='bx bxs-dashboard icon'></i> Menu
                 </a>
-                <a href="#" class="nav-item" id="nav-tables" onclick="app.loadPage('tables-page', 'nav-tables')">
+                
+                <a href="#" class="nav-item active" id="nav-tables" onclick="app.loadPage('tables-page', 'nav-tables'); return false;">
                     <i class='bx bx-grid-alt icon'></i> Quản lý bàn
                 </a>
-                <a href="#" class="nav-item" id="nav-kitchen" onclick="app.loadPage('kitchen-page', 'nav-kitchen')">
+                
+                <a href="#" class="nav-item" id="nav-kitchen" onclick="app.loadPage('kitchen-page', 'nav-kitchen'); return false;">
                     <i class='bx bx-time icon'></i> Trạng thái món ăn
                 </a>
-                <a href="#" class="nav-item" id="nav-admin" onclick="app.loadPage('menu-admin-page', 'nav-admin')">
+                
+                <a href="#" class="nav-item" id="nav-admin" onclick="app.loadPage('menu-admin-page', 'nav-admin'); return false;">
                     <i class='bx bx-list-ul icon'></i> Quản lý Menu
                 </a>
-                <a href="#" class="nav-item" id="nav-settings" onclick="app.loadPage('settings-page', 'nav-settings')">
+                
+                <a href="#" class="nav-item" id="nav-settings" onclick="app.loadPage('settings-page', 'nav-settings'); return false;">
                     <i class='bx bx-cog icon'></i> Cài đặt
                 </a>
             </nav>
 
             <div class="sidebar-footer">
                 <div class="user-profile">
-                    <div class="avatar">AD</div>
+                    <div class="avatar">U</div>
                     <div class="user-info">
-                        <h4>Quản lý</h4>
-                        <span>Admin</span>
+                        <h4>Người dùng</h4>
+                        <span>Chức vụ</span>
                     </div>
                 </div>
-                <button class="logout-btn" onclick="auth.logout()">
+                <button class="logout-btn" onclick="app.logout()">
                     <i class='bx bx-log-out'></i> Đăng xuất
                 </button>
             </div>
@@ -61,21 +63,19 @@
                 <button class="filter-btn"><i class='bx bx-slider-alt'></i></button>
             </header>
 
-            <section id="pos-page" class="page active">
+            <section id="pos-page" class="page" style="display: none; height: 100%; flex-direction: column;">
                 <div class="categories" id="categories-list"></div>
                 <div class="product-grid" id="product-grid"></div>
                 <div class="bottom-status-bar" id="tables-status-bar"></div>
             </section>
 
-            <section id="tables-page" class="page" style="display: none;">
+            <section id="tables-page" class="page active">
                 <div class="page-header">
                     <h2>Sơ đồ bàn & Trạng thái</h2>
-                    <button class="btn-primary-action" onclick="alert('Chức năng thêm bàn')">
-                        <i class='bx bx-plus'></i> Thêm bàn
+                    <button class="btn-primary-action" style="display: none;"> <i class='bx bx-plus'></i> Thêm bàn
                     </button>
                 </div>
-                <div class="table-grid-container">
-                    </div>
+                <div class="table-grid-container"></div>
             </section>
 
             <section id="kitchen-page" class="page" style="display: none;">
@@ -112,22 +112,18 @@
                                 <th>Hành động</th>
                             </tr>
                         </thead>
-                        <tbody id="admin-menu-table">
-                            </tbody>
+                        <tbody id="admin-menu-table"></tbody>
                     </table>
                 </div>
             </section>
 
             <section id="settings-page" class="page" style="display: none;">
-                <div class="page-header">
-                    <h2>Cài đặt</h2>
-                </div>
-                <div id="settings-container" class="settings-wrapper">
-                    </div>
+                <div class="page-header"><h2>Cài đặt hệ thống</h2></div>
+                <div id="settings-container" class="settings-wrapper"></div>
             </section>
         </main>
 
-        <aside class="order-panel" id="main-order-panel">
+        <aside class="order-panel" id="main-order-panel" style="display: none;">
             <div class="order-header">
                 <div>
                     <h2>Order</h2>
@@ -149,39 +145,59 @@
 
             <div class="payment-section">
                 <div class="summary-box">
-                    <div class="summary-row">
-                        <span>Tổng thu</span>
-                        <span id="sub-total">0đ</span>
-                    </div>
-                    <div class="summary-row">
-                        <span>Thuế (5%)</span>
-                        <span id="tax-amount">0đ</span>
-                    </div>
+                    <div class="summary-row"><span>Tổng thu</span><span id="sub-total">0đ</span></div>
+                    <div class="summary-row"><span>Thuế (5%)</span><span id="tax-amount">0đ</span></div>
                     <div class="summary-divider"></div>
-                    <div class="summary-row total">
-                        <span>Tổng số tiền</span>
-                        <span id="final-total">0đ</span>
-                    </div>
+                    <div class="summary-row total"><span>Tổng tiền</span><span id="final-total">0đ</span></div>
                 </div>
-
-                <div class="payment-methods">
-                    <button class="method-card active"><i class='bx bx-money'></i><span>Tiền mặt</span></button>
-                    <button class="method-card"><i class='bx bx-credit-card'></i><span>Thẻ</span></button>
-                    <button class="method-card"><i class='bx bx-qr-scan'></i><span>QR</span></button>
-                </div>
-
-                <button class="place-order-btn" onclick="app.submitOrder()">Đặt món</button>
+                <button class="place-order-btn" onclick="menuApp.submitOrder()">Đặt món</button>
             </div>
         </aside>
     </div>
 
+    <div id="checkout-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class='bx bx-receipt'></i> Thanh Toán - Bàn <span id="modal-table-num">0</span></h3>
+                <button onclick="tableManager.closeModal()" class="btn-close"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="modal-order-list" class="bill-list"></div>
+                <div class="bill-summary">
+                    <div class="row"><span>Tổng cộng:</span> <strong id="modal-total">0đ</strong></div>
+                </div>
+                
+                <div class="modal-payment-options">
+                    <p>Phương thức thanh toán:</p>
+                    <div class="payment-grid">
+                        <button class="pay-method active" onclick="tableManager.selectMethod(this)">
+                            <i class='bx bx-money'></i> Tiền mặt
+                        </button>
+                        <button class="pay-method" onclick="tableManager.selectMethod(this)">
+                            <i class='bx bx-credit-card'></i> Thẻ
+                        </button>
+                        <button class="pay-method" onclick="tableManager.selectMethod(this)">
+                            <i class='bx bx-qr-scan'></i> QR
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="tableManager.closeModal()">Hủy</button>
+                <button class="btn-confirm-pay" onclick="tableManager.confirmCheckout()">
+                    <i class='bx bx-check-circle'></i> Xác nhận
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="src/js/api.js"></script>
+    <script src="src/js/auth.js"></script> 
     <script src="src/js/TableManager.js"></script>
     <script src="src/js/KitchenMonitor.js"></script>
-    <script src="src/js/MenuManager.js"></script>
-    <script src="src/js/Menu.js"></script>
+    <script src="src/js/MenuManager.js"></script> 
     <script src="src/js/Settings.js"></script>
-    <script src="src/js/auth.js"></script>
+    <script src="src/js/Menu.js"></script>
     <script src="src/js/app.js"></script>
 </body>
 </html>
