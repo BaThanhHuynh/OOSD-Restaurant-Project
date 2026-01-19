@@ -5,7 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>4TL POS System</title>
     
-    <link rel="stylesheet" href="src/css/style.css">          <link rel="stylesheet" href="src/css/Menu.css">           <link rel="stylesheet" href="src/css/MenuManager.css">    <link rel="stylesheet" href="src/css/TableManager.css">   <link rel="stylesheet" href="src/css/KitchenMonitor.css"> <link rel="stylesheet" href="src/css/Settings.css">       <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="src/css/style.css">
+    <link rel="stylesheet" href="src/css/Menu.css">
+    <link rel="stylesheet" href="src/css/MenuManager.css">
+    <link rel="stylesheet" href="src/css/TableManager.css">
+    <link rel="stylesheet" href="src/css/KitchenMonitor.css">
+    <link rel="stylesheet" href="src/css/Settings.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
 <body>
@@ -98,22 +104,13 @@
             <section id="menu-admin-page" class="page" style="display: none;">
                 <div class="admin-container">
                     <div class="page-header">
-                        <h2>Quản lý Menu</h2>
-                        <button class="btn-primary-action"><i class='bx bx-plus'></i> Thêm món</button>
+                        <h2>Quản lý Thực đơn</h2>
+                        <button class="btn-primary-action" onclick="menuManager.openAddModal()">
+                            <i class='bx bx-plus'></i> Thêm món mới
+                        </button>
                     </div>
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Tên món</th>
-                                <th>Giá</th>
-                                <th>Danh mục</th>
-                                <th>Trạng thái</th>
-                                <th>Hành động</th>
-                            </tr>
-                        </thead>
-                        <tbody id="admin-menu-table"></tbody>
-                    </table>
+                    <div class="menu-admin-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:15px; overflow-y:auto; padding-bottom:50px;">
+                        </div>
                 </div>
             </section>
 
@@ -186,6 +183,55 @@
                 <button class="btn-cancel" onclick="tableManager.closeModal()">Hủy</button>
                 <button class="btn-confirm-pay" onclick="tableManager.confirmCheckout()">
                     <i class='bx bx-check-circle'></i> Xác nhận
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="menu-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:2000; align-items:center; justify-content:center;">
+        <div style="background:white; width:450px; padding:30px; border-radius:16px; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+            <h2 style="color:#187a42; margin-bottom:20px; text-align:center;">Thêm Món Mới</h2>
+            
+            <div style="display:flex; flex-direction:column; gap:15px;">
+                <div>
+                    <label style="font-weight:600; font-size:13px; color:#666;">Tên món ăn</label>
+                    <input type="text" id="input-name" placeholder="Ví dụ: Bò bít tết" 
+                           style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; margin-top:5px;">
+                </div>
+
+                <div style="display:flex; gap:15px;">
+                    <div style="flex:1;">
+                        <label style="font-weight:600; font-size:13px; color:#666;">Giá bán (VNĐ)</label>
+                        <input type="number" id="input-price" placeholder="50000" 
+                               style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; margin-top:5px;">
+                    </div>
+                    <div style="flex:1;">
+                        <label style="font-weight:600; font-size:13px; color:#666;">Danh mục</label>
+                        <select id="input-category" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; margin-top:5px;">
+                            <option value="food">Đồ ăn</option>
+                            <option value="drinks">Thức uống</option>
+                            <option value="dessert">Tráng miệng</option>
+                            <option value="pasta">Món thêm</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label style="font-weight:600; font-size:13px; color:#666;">Link hình ảnh</label>
+                    <input type="text" id="input-image" placeholder="src/assets/..." 
+                           style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; margin-top:5px;">
+                    <small style="color:#999;">Gợi ý: Copy đường dẫn ảnh từ folder assets (VD: src/assets/Pho.jpg)</small>
+                </div>
+            </div>
+
+            <div style="margin-top:25px; display:flex; gap:10px; justify-content:flex-end;">
+                <button onclick="document.getElementById('menu-modal').style.display='none'" 
+                        style="padding:10px 20px; border:none; background:#f1f2f6; color:#333; border-radius:8px; cursor:pointer; font-weight:600;">
+                    Hủy bỏ
+                </button>
+                <button onclick="menuManager.saveItem()" 
+                        style="padding:10px 25px; border:none; background:#187a42; color:white; border-radius:8px; cursor:pointer; font-weight:600; box-shadow:0 4px 10px rgba(24, 122, 66, 0.3);">
+                    Lưu Món
                 </button>
             </div>
         </div>

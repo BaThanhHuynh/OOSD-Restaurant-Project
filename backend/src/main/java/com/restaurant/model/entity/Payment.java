@@ -2,29 +2,59 @@ package com.restaurant.model.entity;
 
 import java.time.LocalDateTime;
 
-public class Payment {
-    private int id;
-    private int orderId;
-    private double amount;
-    private String method;
-    private LocalDateTime timestamp;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 
-    public Payment(int id, int orderId, double amount, String method) {
-        this.id = id;
-        this.orderId = orderId;
+@Entity
+@jakarta.persistence.Table(name = "payments")
+public class Payment {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
+
+    @Column(name = "table_id")
+    private int tableId; // Biến này cần có Getter bên dưới
+
+    @Column(name = "amount")
+    private double amount;
+
+    @Column(name = "payment_time")
+    private LocalDateTime paymentTime;
+
+    @Column(name = "method")
+    private String method;
+
+    public Payment() {}
+
+    public Payment(int tableId, double amount, String method) {
+        this.tableId = tableId;
         this.amount = amount;
         this.method = method;
-        this.timestamp = LocalDateTime.now();
+        this.paymentTime = LocalDateTime.now();
+    }
+    
+    // --- KHU VỰC QUAN TRỌNG: CÁC HÀM GETTER & SETTER ---
+    // (Thiếu hàm này là PaymentService sẽ báo lỗi đỏ ngay)
+    public int getTableId() { 
+        return tableId; 
+    }
+    
+    public void setTableId(int tableId) { 
+        this.tableId = tableId; 
     }
 
-    // Getters
     public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+
     public double getAmount() { return amount; }
+    public void setAmount(double amount) { this.amount = amount; }
+
+    public LocalDateTime getPaymentTime() { return paymentTime; }
+    public void setPaymentTime(LocalDateTime paymentTime) { this.paymentTime = paymentTime; }
+
     public String getMethod() { return method; }
-    
-    @Override
-    public String toString() {
-        return String.format("Hóa đơn #%d | Order: %d | Tiền: %.0fđ | %s | %s", 
-                id, orderId, amount, method, timestamp.toString());
-    }
+    public void setMethod(String method) { this.method = method; }
 }
