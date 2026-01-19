@@ -1,63 +1,47 @@
 package com.restaurant.model.entity;
 
-import com.restaurant.model.enums.TableStatus;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 
+@Entity
+@jakarta.persistence.Table(name = "restaurant_tables") // Tên bảng trong MySQL
 public class Table {
-    // 1. Encapsulation: Thuộc tính private
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-    private int tableNumber;
+
+    @Column(nullable = false)
+    private String name;
+
+    @Column(nullable = false)
+    private String status; // 'available', 'occupied', 'reserved'
+
+    @Column(nullable = false)
     private int capacity;
-    private TableStatus status;
 
-    // 2. Constructor: Khởi tạo đối tượng chuẩn
-    public Table(int id, int tableNumber, int capacity) {
+    public Table() {}
+
+    public Table(int id, String name, String status, int capacity) {
         this.id = id;
-        this.tableNumber = tableNumber;
-        setCapacity(capacity); // Dùng setter để tận dụng validation
-        this.status = TableStatus.AVAILABLE; // Mặc định khi tạo bàn là Trống
-    }
-
-    // 3. Getters & Setters
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public int getTableNumber() {
-        return tableNumber;
-    }
-
-    public void setTableNumber(int tableNumber) {
-        this.tableNumber = tableNumber;
-    }
-
-    public int getCapacity() {
-        return capacity;
-    }
-
-    // Validation logic ngay trong Setter
-    public final void setCapacity(int capacity) {
-        if (capacity <= 0) {
-            throw new IllegalArgumentException("Sức chứa của bàn phải lớn hơn 0");
-        }
+        this.name = name;
+        this.status = status;
         this.capacity = capacity;
     }
 
-    public TableStatus getStatus() {
-        return status;
-    }
+    // --- Getters & Setters ---
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
 
-    public void setStatus(TableStatus status) {
-        this.status = status;
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    // Method hỗ trợ hiển thị (Helper)
-    @Override
-    public String toString() {
-        return String.format("Table [ID: %d | Số bàn: %d | Ghế: %d | Trạng thái: %s]", 
-                             id, tableNumber, capacity, status);
-    }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+
+    public int getCapacity() { return capacity; }
+    public void setCapacity(int capacity) { this.capacity = capacity; }
 }
