@@ -21,7 +21,7 @@
 - Các thư viện hỗ trợ UI phức tạp (JavaFX, Swing - trừ khi yêu cầu bắt buộc, nhưng ưu tiên CLI để tập trung logic).
 #### Mục đích: giữ hệ thống nhẹ, rõ thiết kế, dễ phân tích OOP & Design Patterns.
 
-### 3. DOMAIN MODEL (PYTHON OOP)
+### 3. DOMAIN MODEL (JAVA OOP)
 #### 3.1 Các Entity chính
 - Table
 - MenuItem

@@ -1,0 +1,274 @@
+{
+  "info": {
+    "_postman_id": "9584edd7-2b2f-4f90-bf12-79b8035e0867",
+    "name": "restaurant_db",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Tạo order cho bàn",
+      "id": "a5f77d6b-0ace-492b-8901-c3316d86a816",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/orders/table/5",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "orders",
+            "table",
+            "5"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Thêm 1 món",
+      "id": "0626dc5c-ff86-4db2-9243-c42da3506b55",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"menuItemId\": 1,\r\n    \"quantity\": 2\r\n  }",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/orders/1/items",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "orders",
+            "1",
+            "items"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Thêm Nhiều Món Cùng Lúc",
+      "id": "cc5044b1-01c3-4b5d-ba7e-4e3a5a1cc4d0",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "[\r\n    {\"menuItemId\": 1, \"quantity\": 2},\r\n    {\"menuItemId\": 3, \"quantity\": 1},\r\n    {\"menuItemId\": 5, \"quantity\": 3}\r\n  ]",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/orders/1/items/batch",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "orders",
+            "1",
+            "items",
+            "batch"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "CHUYỂN TRẠNG THÁI MÓN ĂN",
+      "id": "752933a1-56af-4d08-8b87-6e1e873ae2df",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/orders/1/items/1/next-state",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "orders",
+            "1",
+            "items",
+            "1",
+            "next-state"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Chuyển Tất Cả Món Cùng Lúc",
+      "id": "6281d8f9-06fa-4c21-92fe-27ba83e74f2c",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/orders/1/items/next-state-all",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "orders",
+            "1",
+            "items",
+            "next-state-all"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Lấy Order Theo ID",
+      "id": "efffb1a4-d948-4616-8bbf-d68495e71547",
+      "request": {
+        "method": "GET",
+        "header": []
+      },
+      "response": []
+    },
+    {
+      "name": "Lấy Order Đang Active Của Bàn",
+      "id": "89a68cf9-6969-46f2-9f46-70e4ba92c5bf",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/orders/table/5",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "orders",
+            "table",
+            "5"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Lấy Tất Cả Orders Đang Xử Lý",
+      "id": "6575bd11-45a3-4712-93ea-bef9688e050e",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/orders/in-progress",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "orders",
+            "in-progress"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Xóa Một Món Khỏi Order",
+      "id": "1a74cfbb-be5c-43f1-bd12-ef0bf90758fd",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/orders/1/items/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "orders",
+            "1",
+            "items",
+            "1"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "HOÀN THÀNH ORDER",
+      "id": "50f290f7-21d2-4327-9419-2cf45cc7be5b",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/orders/1/complete",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "orders",
+            "1",
+            "complete"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "id": "59e5bfe0-004a-4268-a51b-39d46cf9af96",
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "id": "40d90ba4-d8f8-4e50-9bc4-657d16027283",
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "id": "7b3473b3-ae47-4ed7-b76d-9077bbaf8100",
+      "key": "base_url",
+      "value": ""
+    }
+  ]
+}
