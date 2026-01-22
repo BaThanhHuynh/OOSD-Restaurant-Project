@@ -267,35 +267,85 @@ const menuApp = {
     },
 
     submitOrder: async function() {
-        if (this.state.cart.length === 0) { alert(" Vui lòng chọn món trước!"); return; }
+        if (this.state.cart.length === 0) { 
+            alert("Vui lòng chọn món trước!"); 
+            return; 
+        }
+        
         const tableId = localStorage.getItem('activeTableId');
-        if (!tableId) { alert(" Vui lòng mở bàn trước!"); return; }
-        if (!confirm(` Xác nhận gọi ${this.state.cart.length} món?`)) return;
+        if (!tableId) { 
+            alert("Vui lòng mở bàn trước!"); 
+            return; 
+        }
+        
+        if (!confirm(`Xác nhận gọi ${this.state.cart.length} loại món?`)) return;
 
         try {
-            let successCount = 0;
-            for (const item of this.state.cart) {
-                for(let i=0; i < item.qty; i++) {
-                    const orderItem = { name: item.name, price: item.price };
-                    const response = await fetch(`${API_ORDERS}/${tableId}/add`, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify(orderItem)
-                    });
-                    if (response.ok) successCount++;
+            // Bước 1: Lấy hoặc tạo order active cho bàn
+            let orderId;
+            
+            // Kiểm tra xem bàn có order active không
+            const activeOrderRes = await fetch(`${API_ORDERS}/table/${tableId}/active`);
+            
+            if (activeOrderRes.ok) {
+                // Đã có order active
+                const activeOrder = await activeOrderRes.json();
+                console.log('Active order response:', activeOrder);
+                // Backend có thể trả về 'id' hoặc 'orderId'
+                orderId = activeOrder.orderId || activeOrder.id;
+                console.log('Using existing order ID:', orderId);
+            } else {
+                // Chưa có order active, tạo mới
+                console.log('Creating new order for table:', tableId);
+                const createOrderRes = await fetch(`${API_ORDERS}/table/${tableId}`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'}
+                });
+                
+                if (!createOrderRes.ok) {
+                    const errorText = await createOrderRes.text();
+                    console.error('Create order error:', errorText);
+                    throw new Error('Không thể tạo order mới');
                 }
+                
+                const newOrder = await createOrderRes.json();
+                console.log('New order response:', newOrder);
+                // Backend có thể trả về 'id' hoặc 'orderId'
+                orderId = newOrder.orderId || newOrder.id;
+                console.log('Created new order ID:', orderId);
             }
-            if (successCount > 0) {
-                alert(` Đã gửi thành công!`);
+
+            if (!orderId) {
+                throw new Error('Không thể lấy Order ID từ server');
+            }
+
+            // Bước 2: Thêm các món vào order (batch request)
+            const items = this.state.cart.map(item => ({
+                menuItemId: item.id,
+                quantity: item.qty
+            }));
+            
+            console.log('Adding items to order:', orderId, items);
+
+            const addItemsRes = await fetch(`${API_ORDERS}/${orderId}/items/batch`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(items)
+            });
+
+            if (addItemsRes.ok) {
+                alert(`Đã gửi thành công ${this.state.cart.length} món!`);
                 this.state.cart = [];
                 this.renderCart();
                 this.renderProducts();
             } else {
-                alert(" Lỗi, vui lòng thử lại!");
+                const errorText = await addItemsRes.text();
+                console.error('Error response:', errorText);
+                alert("Lỗi khi thêm món, vui lòng thử lại!");
             }
         } catch (error) {
-            console.error(error);
-            alert(" Lỗi kết nối Server!");
+            console.error('Submit order error:', error);
+            alert("Lỗi kết nối Server! Vui lòng kiểm tra backend.");
         }
     }
 };
