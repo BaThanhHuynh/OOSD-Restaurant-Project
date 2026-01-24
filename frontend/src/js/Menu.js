@@ -19,13 +19,19 @@ const menuApp = {
         tables: []
     },
 
-    init: function() {
+    init: function () {
         if (!document.getElementById('product-grid')) return;
 
         this.checkAuth();
         this.fetchMenuData();
         this.renderCart();
-        this.updateHeaderTableInfo();
+
+        // [FIX] Chỉ update header nếu có activeTableId
+        const tableId = localStorage.getItem('activeTableId');
+        if (tableId && tableId !== 'null') {
+            this.updateHeaderTableInfo();
+        }
+
         this.updateViewMode();
 
         // [MỚI] Tạo sẵn Modal cảnh báo View Mode
@@ -33,7 +39,7 @@ const menuApp = {
     },
 
     // --- [MỚI] TẠO MODAL CẢNH BÁO CHẾ ĐỘ XEM ---
-    createViewOnlyModal: function() {
+    createViewOnlyModal: function () {
         if (document.getElementById('view-mode-modal')) return;
 
         const modalHTML = `
@@ -63,14 +69,14 @@ const menuApp = {
     },
 
     // Hàm chuyển hướng về trang Quản lý bàn
-    switchToTableManager: function() {
+    switchToTableManager: function () {
         document.getElementById('view-mode-modal').style.display = 'none';
         if (window.app) {
             app.loadPage('tables-page', 'nav-tables');
         }
     },
 
-    updateViewMode: function() {
+    updateViewMode: function () {
         const isViewOnly = localStorage.getItem('isViewOnly') === 'true';
         const orderPanel = document.getElementById('main-order-panel');
         const posPage = document.getElementById('pos-page');
@@ -78,25 +84,25 @@ const menuApp = {
         if (isViewOnly) {
             if (orderPanel) orderPanel.style.display = 'none';
             if (posPage) {
-                posPage.style.width = '100%'; 
+                posPage.style.width = '100%';
                 posPage.style.paddingRight = '20px';
             }
         } else {
             if (orderPanel) orderPanel.style.display = 'flex';
             if (posPage) {
-                posPage.style.width = ''; 
+                posPage.style.width = '';
                 posPage.style.paddingRight = '';
             }
         }
     },
 
-    fetchMenuData: async function() {
+    fetchMenuData: async function () {
         try {
             const res = await fetch(API_MENU);
             if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
             const data = await res.json();
             if (!Array.isArray(data)) throw new Error("Dữ liệu lỗi");
-            
+
             this.state.products = data;
             this.renderCategories();
             this.renderProducts();
@@ -107,7 +113,7 @@ const menuApp = {
         }
     },
 
-    checkAuth: function() {
+    checkAuth: function () {
         const userToken = localStorage.getItem('user_token');
         if (!userToken) return;
         try {
@@ -119,7 +125,7 @@ const menuApp = {
         } catch (e) { console.error(e); }
     },
 
-    updateHeaderTableInfo: function() {
+    updateHeaderTableInfo: function () {
         const tableNum = localStorage.getItem('activeTableNumber');
         const headerTitle = document.querySelector('.order-header h2');
         if (tableNum && headerTitle) {
@@ -128,16 +134,16 @@ const menuApp = {
         }
     },
 
-    formatMoney: function(amount) {
+    formatMoney: function (amount) {
         return (parseFloat(amount) || 0).toLocaleString('vi-VN') + 'đ';
     },
 
-    renderCategories: function() {
+    renderCategories: function () {
         const container = document.getElementById('categories-list');
         if (!container) return;
         const catsWithCount = categoriesConfig.map(cat => {
-            let count = (cat.id === 'all') 
-                ? this.state.products.length 
+            let count = (cat.id === 'all')
+                ? this.state.products.length
                 : this.state.products.filter(p => p.categoryId === cat.id).length;
             return { ...cat, count };
         });
@@ -151,11 +157,11 @@ const menuApp = {
         `).join('');
     },
 
-    renderProducts: function() {
+    renderProducts: function () {
         const container = document.getElementById('product-grid');
         if (!container) return;
-        const filtered = this.state.currentCat === 'all' 
-            ? this.state.products 
+        const filtered = this.state.currentCat === 'all'
+            ? this.state.products
             : this.state.products.filter(p => p.categoryId === this.state.currentCat);
 
         if (filtered.length === 0) {
@@ -166,7 +172,7 @@ const menuApp = {
         container.innerHTML = filtered.map(product => {
             const inCart = this.state.cart.find(i => i.id === product.id);
             const imgSrc = product.imageUrl || 'src/assets/Nha_hang.jpg';
-            
+
             return `
             <div class="product-card" onclick="menuApp.addToCart(${product.id})" style="cursor: pointer;">
                 <div class="card-img-placeholder">
@@ -190,7 +196,7 @@ const menuApp = {
         }).join('');
     },
 
-    renderCart: function() {
+    renderCart: function () {
         const container = document.getElementById('cart-items');
         if (!container) return;
         if (this.state.cart.length === 0) {
@@ -209,31 +215,31 @@ const menuApp = {
         this.updateTotals();
     },
 
-    filterCategory: function(catId) {
+    filterCategory: function (catId) {
         this.state.currentCat = catId;
         this.renderCategories();
         this.renderProducts();
     },
 
-    addToCart: function(id) {
+    addToCart: function (id) {
         // [SỬA ĐỔI] Thay alert bằng Modal xịn xò
         const isViewOnly = localStorage.getItem('isViewOnly') === 'true';
         if (isViewOnly) {
             // Hiện Modal thay vì Alert
             const modal = document.getElementById('view-mode-modal');
-            if (modal) modal.style.display = 'flex'; 
+            if (modal) modal.style.display = 'flex';
             return;
         }
 
         const product = this.state.products.find(p => p.id === id);
         if (!product) return;
         const exist = this.state.cart.find(i => i.id === id);
-        if (exist) exist.qty++; else this.state.cart.push({...product, qty: 1});
+        if (exist) exist.qty++; else this.state.cart.push({ ...product, qty: 1 });
         this.renderCart();
         this.renderProducts();
     },
 
-    decreaseQty: function(id) {
+    decreaseQty: function (id) {
         const isViewOnly = localStorage.getItem('isViewOnly') === 'true';
         if (isViewOnly) return;
         const exist = this.state.cart.find(i => i.id === id);
@@ -245,7 +251,7 @@ const menuApp = {
         this.renderProducts();
     },
 
-    removeFromCart: function(id) {
+    removeFromCart: function (id) {
         const isViewOnly = localStorage.getItem('isViewOnly') === 'true';
         if (isViewOnly) return;
         this.state.cart = this.state.cart.filter(i => i.id !== id);
@@ -253,104 +259,162 @@ const menuApp = {
         this.renderProducts();
     },
 
-    updateTotals: function() {
+    updateTotals: function () {
         const subTotal = this.state.cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
         const tax = subTotal * 0.05;
         const total = subTotal + tax;
         const setVal = (id, val) => {
             const el = document.getElementById(id);
-            if(el) el.textContent = this.formatMoney(val);
+            if (el) el.textContent = this.formatMoney(val);
         };
         setVal('sub-total', subTotal);
         setVal('tax-amount', tax);
         setVal('final-total', total);
     },
 
-    submitOrder: async function() {
-        if (this.state.cart.length === 0) { 
-            alert("Vui lòng chọn món trước!"); 
-            return; 
+    submitOrder: async function () {
+        // 1. Kiểm tra giỏ hàng
+        if (this.state.cart.length === 0) {
+            alert("Vui lòng chọn món trước!");
+            return;
         }
-        
-        const tableId = localStorage.getItem('activeTableId');
-        if (!tableId) { 
-            alert("Vui lòng mở bàn trước!"); 
-            return; 
+
+        // 2. Kiểm tra bàn
+        const tableIdStr = localStorage.getItem('activeTableId');
+        const tableNumber = localStorage.getItem('activeTableNumber');
+
+        if (!tableIdStr) {
+            alert("Vui lòng chọn bàn từ trang 'Quản lý bàn' trước!");
+            // Chuyển hướng người dùng về trang chọn bàn
+            if (window.app) app.loadPage('tables-page', 'nav-tables');
+            return;
         }
-        
-        if (!confirm(`Xác nhận gọi ${this.state.cart.length} loại món?`)) return;
+        const tableId = parseInt(tableIdStr); // Chuyển về số nguyên
+
+        if (!confirm(`Xác nhận gọi ${this.state.cart.length} món cho bàn ${tableNumber}?`)) return;
 
         try {
-            // Bước 1: Lấy hoặc tạo order active cho bàn
+            // --- BƯỚC 1: TÌM HOẶC TẠO ORDER ---
             let orderId;
-            
-            // Kiểm tra xem bàn có order active không
-            const activeOrderRes = await fetch(`${API_ORDERS}/table/${tableId}/active`);
-            
+
+            // Gọi API kiểm tra xem bàn này đã có Order đang mở chưa
+            let activeOrderRes = await fetch(`${API_ORDERS}/table/${tableId}/active`);
+
             if (activeOrderRes.ok) {
-                // Đã có order active
                 const activeOrder = await activeOrderRes.json();
-                console.log('Active order response:', activeOrder);
-                // Backend có thể trả về 'id' hoặc 'orderId'
-                orderId = activeOrder.orderId || activeOrder.id;
-                console.log('Using existing order ID:', orderId);
+                orderId = activeOrder.id || activeOrder.orderId;
+                console.log("✅ Tìm thấy Order đang mở:", orderId);
             } else {
-                // Chưa có order active, tạo mới
-                console.log('Creating new order for table:', tableId);
-                const createOrderRes = await fetch(`${API_ORDERS}/table/${tableId}`, {
+                // Nếu chưa có (404), gọi API tạo Order mới
+                console.log("📝 Tạo Order mới cho bàn", tableId);
+                const createRes = await fetch(`${API_ORDERS}/table/${tableId}`, {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'}
+                    headers: { 'Content-Type': 'application/json' }
                 });
-                
-                if (!createOrderRes.ok) {
-                    const errorText = await createOrderRes.text();
-                    console.error('Create order error:', errorText);
-                    throw new Error('Không thể tạo order mới');
+
+                if (!createRes.ok) {
+                    // Lấy thông báo lỗi chi tiết từ backend
+                    let errorMessage = "Không thể tạo đơn hàng mới cho bàn này.";
+                    try {
+                        const errorText = await createRes.text();
+                        if (errorText) {
+                            errorMessage += `\n\nChi tiết lỗi: ${errorText}`;
+                        }
+                    } catch (e) {
+                        // Không parse được error text
+                    }
+
+                    // Hiển thị lỗi chi tiết
+                    alert(
+                        `❌ ${errorMessage}\n\n` +
+                        `Nguyên nhân có thể:\n` +
+                        `- Bàn ${tableNumber} (ID: ${tableId}) không tồn tại trong database\n` +
+                        `- Backend chưa chạy hoặc mất kết nối\n` +
+                        `- Bàn chưa được mở (status không phải OCCUPIED)\n\n` +
+                        `Hãy kiểm tra:\n` +
+                        `1. Backend đang chạy tại http://localhost:8080\n` +
+                        `2. Database có dữ liệu bàn\n` +
+                        `3. Bàn đã được mở (click vào bàn trống để mở)`
+                    );
+                    throw new Error(errorMessage);
                 }
-                
-                const newOrder = await createOrderRes.json();
-                console.log('New order response:', newOrder);
-                // Backend có thể trả về 'id' hoặc 'orderId'
-                orderId = newOrder.orderId || newOrder.id;
-                console.log('Created new order ID:', orderId);
+
+                const newOrder = await createRes.json();
+                orderId = newOrder.id || newOrder.orderId;
+                console.log("✅ Tạo Order mới thành công:", orderId);
             }
 
-            if (!orderId) {
-                throw new Error('Không thể lấy Order ID từ server');
-            }
-
-            // Bước 2: Thêm các món vào order (batch request)
-            const items = this.state.cart.map(item => ({
+            // --- BƯỚC 2: GỬI DANH SÁCH MÓN ---
+            // Chuẩn bị dữ liệu đúng chuẩn Backend yêu cầu (ItemRequest)
+            const itemsPayload = this.state.cart.map(item => ({
                 menuItemId: item.id,
                 quantity: item.qty
             }));
-            
-            console.log('Adding items to order:', orderId, items);
+
+            console.log("📤 Gửi danh sách món:", itemsPayload);
 
             const addItemsRes = await fetch(`${API_ORDERS}/${orderId}/items/batch`, {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(items)
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(itemsPayload)
             });
 
             if (addItemsRes.ok) {
-                alert(`Đã gửi thành công ${this.state.cart.length} món!`);
+                console.log("✅ Thêm món thành công!");
+
+                // RESET GIỎ HÀNG SAU KHI GỌI THÀNH CÔNG
                 this.state.cart = [];
                 this.renderCart();
-                this.renderProducts();
+
+                // Hiển thị thông báo thành công và hỏi người dùng muốn làm gì tiếp theo
+                const viewKitchen = confirm(
+                    `✅ Đã gọi món thành công cho Bàn ${tableNumber}!\n\n` +
+                    `Món ăn đã được chuyển đến bếp.\n\n` +
+                    `Bạn có muốn xem trạng thái món ăn không?`
+                );
+
+                if (viewKitchen) {
+                    // Chuyển sang màn hình Kitchen Monitor
+                    if (window.app) {
+                        app.loadPage('kitchen-page', 'nav-kitchen');
+                        // Làm mới dữ liệu Kitchen Monitor ngay lập tức
+                        setTimeout(() => {
+                            if (window.kitchenApp) {
+                                kitchenApp.fetchData();
+                            }
+                        }, 100);
+                    }
+                } else {
+                    // Chuyển về màn hình quản lý bàn
+                    if (window.app) app.loadPage('tables-page', 'nav-tables');
+                }
             } else {
-                const errorText = await addItemsRes.text();
-                console.error('Error response:', errorText);
-                alert("Lỗi khi thêm món, vui lòng thử lại!");
+                const errText = await addItemsRes.text();
+                console.error("❌ Lỗi thêm món:", errText);
+                alert(
+                    `❌ Lỗi khi thêm món vào đơn hàng!\n\n` +
+                    `Chi tiết: ${errText}\n\n` +
+                    `Vui lòng thử lại hoặc liên hệ quản trị viên.`
+                );
             }
+
         } catch (error) {
-            console.error('Submit order error:', error);
-            alert("Lỗi kết nối Server! Vui lòng kiểm tra backend.");
+            console.error('❌ Lỗi gọi món:', error);
+
+            // Chỉ hiển thị alert nếu chưa hiển thị ở trên
+            if (!error.message || !error.message.includes("Không thể tạo đơn hàng")) {
+                alert(
+                    "❌ Lỗi kết nối Server!\n\n" +
+                    "Vui lòng kiểm tra:\n" +
+                    "- Backend đã chạy chưa (Port 8080)\n" +
+                    "- Kết nối mạng\n" +
+                    "- Console để xem chi tiết lỗi"
+                );
+            }
         }
     }
 };
-
 window.menuApp = menuApp;
-document.addEventListener('DOMContentLoaded', () => { 
-    menuApp.init(); 
+document.addEventListener('DOMContentLoaded', () => {
+    menuApp.init();
 });

@@ -1,33 +1,37 @@
 /**
- * TABLE MANAGER LOGIC (QUẢN LÝ BÀN)
+ * TABLE MANAGER LOGIC (FINAL MERGED VERSION)
+ * Features: Vertical Modal, QR Code Payment, Auto-Clear Cart Fix
  * File: frontend/src/js/TableManager.js
  */
 
 const tableManager = {
     tables: [],
+    currentTableId: null,
+    currentTableName: null,
+    currentOrderTotal: 0, 
 
+    // Khởi tạo
     init: async function() {
         if (document.querySelector('.table-grid-container')) {
             await this.loadTables();
         }
     },
 
-    // 1. Tải danh sách bàn từ API
+    // 1. Tải danh sách bàn
     loadTables: async function() {
         try {
             const res = await fetch(API_TABLES);
-            if (!res.ok) throw new Error("Lỗi tải bàn");
-            
+            if (!res.ok) throw new Error("Lỗi tải danh sách bàn");
             this.tables = await res.json();
             this.renderTables();
         } catch (error) {
             console.error(error);
-            document.querySelector('.table-grid-container').innerHTML = 
-                `<p style="color:red; text-align:center;"> Mất kết nối đến Server!</p>`;
+            const container = document.querySelector('.table-grid-container');
+            if(container) container.innerHTML = `<p style="color:red; text-align:center;">Mất kết nối server!</p>`;
         }
     },
 
-    // 2. Vẽ giao diện bàn
+    // 2. Render giao diện bàn
     renderTables: function() {
         const container = document.querySelector('.table-grid-container');
         if (!container) return;
@@ -38,164 +42,302 @@ const tableManager = {
         }
 
         container.innerHTML = this.tables.map(table => {
-            let statusClass = '';
-            let statusText = '';
-            let actionButtons = '';
-
-            if (table.status === 'occupied') {
-                // CÓ KHÁCH
-                statusClass = 'occupied';
-                statusText = 'Đang phục vụ';
-                actionButtons = `
-                    <div class="table-actions-group">
-                        <button class="btn-action btn-order" onclick="tableManager.openOrder(${table.id}, '${table.name}')">
-                            Gọi món
-                        </button>
-                        <button class="btn-action btn-view" onclick="tableManager.viewOrder(${table.id}, '${table.name}')">
-                            Xem
-                        </button>
-                    </div>
-                    <button class="btn-action btn-pay" onclick="tableManager.openPaymentModal(${table.id}, '${table.name}')">
-                        Thanh toán
-                    </button>
-                `;
-            } else {
-                // BÀN TRỐNG
-                statusClass = 'available';
-                statusText = 'Bàn trống';
-                actionButtons = `
-                    <button class="btn-action btn-open" onclick="tableManager.openTable(${table.id})">
-                        <i class='bx bx-door-open'></i> Mở bàn
-                    </button>
-                `;
-            }
+            let statusClass = table.status === 'occupied' ? 'occupied' : 'available';
+            let statusText = table.status === 'occupied' ? 'Đang phục vụ' : 'Bàn trống';
+            // Click action
+            let clickEvent = table.status === 'occupied' 
+                ? `tableManager.openDetailModal(${table.id}, '${table.name}')`
+                : `tableManager.openGuestModal(${table.id}, '${table.name}')`;
 
             return `
-                <div class="table-card ${statusClass}" id="table-${table.id}">
+                <div class="table-card ${statusClass}" onclick="${clickEvent}">
                     <div class="table-icon"><i class='bx bx-dish'></i></div>
                     <h3 class="table-name">${table.name}</h3>
                     <span class="table-status">${statusText}</span>
-                    <div class="table-actions">${actionButtons}</div>
                 </div>
             `;
         }).join('');
     },
 
-    // 3. Mở bàn (Chuyển trạng thái sang occupied)
-    openTable: async function(id) {
+    // ============================================================
+    // LOGIC 1: MỞ BÀN (NHẬP KHÁCH)
+    // ============================================================
+
+    openGuestModal: function(id, name) {
+        this.currentTableId = id;
+        this.currentTableName = name;
+        const input = document.getElementById('guest-count-input');
+        if(input) { input.value = 1; input.focus(); }
+        document.getElementById('guest-modal').style.display = 'flex';
+    },
+
+    closeGuestModal: function() {
+        document.getElementById('guest-modal').style.display = 'none';
+        this.currentTableId = null;
+    },
+
+    confirmOpenTable: async function() {
+        const guests = document.getElementById('guest-count-input').value;
+        if (guests < 1) { alert("Số lượng khách không hợp lệ"); return; }
+
         try {
-            // Gọi API cập nhật trạng thái
-            const res = await fetch(`${API_TABLES}/${id}/status?status=occupied`, {
-                method: 'PUT'
-            });
-            
+            const res = await fetch(`${API_TABLES}/${this.currentTableId}/status?status=occupied`, { method: 'PUT' });
             if (res.ok) {
-                // Chỉ cần load lại danh sách để bàn đổi màu đỏ là đủ
-                await this.loadTables(); 
+                this.closeGuestModal();
+                await this.loadTables();
+                this.openDetailModal(this.currentTableId, this.currentTableName);
+            } else { alert("Lỗi mở bàn!"); }
+        } catch (e) { console.error(e); alert("Lỗi kết nối!"); }
+    },
+
+    // ============================================================
+    // LOGIC 2: CHI TIẾT BÀN
+    // ============================================================
+
+    openDetailModal: async function(tableId, tableName) {
+        this.currentTableId = tableId;
+        this.currentTableName = tableName;
+
+        document.getElementById('detail-modal-title').innerText = `Chi tiết ${tableName}`;
+        const modal = document.getElementById('table-detail-modal');
+        const listBody = document.getElementById('detail-order-list');
+        const emptyMsg = document.getElementById('detail-empty-msg');
+        const totalSpan = document.getElementById('detail-total-amount');
+
+        // Reset UI
+        listBody.innerHTML = '';
+        emptyMsg.style.display = 'none';
+        totalSpan.innerText = '0 ₫';
+        modal.style.display = 'flex';
+
+        try {
+            const res = await fetch(`${API_ORDERS}/table/${tableId}/active`);
+            if (res.ok) {
+                const order = await res.json();
+                this.renderDetailItems(order, listBody, totalSpan);
+                this.currentOrderTotal = order.totalAmount || 0;
             } else {
-                alert("Lỗi mở bàn!");
+                emptyMsg.style.display = 'block';
+                this.currentOrderTotal = 0;
             }
-        } catch (error) {
-            console.error(error);
-            alert("Lỗi kết nối!");
+        } catch (e) {
+            console.error(e);
+            listBody.innerHTML = `<tr><td colspan="4" style="color:red; text-align:center;">Lỗi tải dữ liệu</td></tr>`;
         }
+
+        // Gán sự kiện nút
+        document.getElementById('btn-detail-order').onclick = () => {
+            this.closeDetailModal();
+            this.goToPosPage(tableId, tableName);
+        };
+        document.getElementById('btn-detail-pay').onclick = () => {
+            this.closeDetailModal();
+            this.openPaymentModal(tableId, tableName);
+        };
     },
 
-    // 4. Chuyển sang trang Gọi món (POS) - CHẾ ĐỘ GỌI MÓN
-    openOrder: function(id, name) {
-        // Lưu thông tin bàn
-        localStorage.setItem('activeTableId', id);
-        localStorage.setItem('activeTableNumber', name.replace('Bàn ', ''));
-        localStorage.setItem('activeTableName', name);
-        localStorage.setItem('isViewOnly', 'false'); 
-
-        // Chuyển trang
-        if (window.app) {
-            app.loadPage('pos-page', 'nav-pos');
-            if(window.menuApp) {
-                window.menuApp.updateViewMode(); 
-                window.menuApp.updateHeaderTableInfo();
-            }
-        }
+    closeDetailModal: function() {
+        document.getElementById('table-detail-modal').style.display = 'none';
     },
 
-    // 5. Xem đơn hàng - CHẾ ĐỘ CHỈ XEM (READ ONLY)
-    viewOrder: function(id, name) {
-        localStorage.setItem('activeTableId', id);
-        localStorage.setItem('activeTableNumber', name.replace('Bàn ', ''));
-        localStorage.setItem('activeTableName', name);
-        localStorage.setItem('isViewOnly', 'true');
-
-        // Chuyển trang
-        if (window.app) {
-            app.loadPage('pos-page', 'nav-pos');
-            if(window.menuApp) {
-                window.menuApp.updateViewMode();
-                window.menuApp.updateHeaderTableInfo();
-            }
-        }
-    },
-
-    // 6. Mở Modal Thanh toán
-    openPaymentModal: async function(id, name) {
-        // Lưu ID bàn cần thanh toán
-        this.currentPayTableId = id;
+    renderDetailItems: function(order, container, totalElement) {
+        const fmt = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
         
-        // Hiện Modal
+        if (!order || !order.orderItems || order.orderItems.length === 0) {
+            if(totalElement) totalElement.innerText = '0 ₫';
+            return;
+        }
+
+        const html = order.orderItems.map(item => {
+            const itemTotal = item.menuItem.price * item.quantity;
+            const timeStr = new Date().toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'});
+            return `
+                <tr>
+                    <td><b>${item.menuItem.name}</b><br><small style="color:#64748b">${fmt.format(item.menuItem.price)}</small></td>
+                    <td style="text-align: center;">x${item.quantity}</td>
+                    <td style="text-align: center; color:#666;">${timeStr}</td>
+                    <td style="text-align: right; font-weight:bold;">${fmt.format(itemTotal)}</td>
+                </tr>
+            `;
+        }).join('');
+
+        if(container) container.innerHTML = html;
+        if(totalElement) totalElement.innerText = fmt.format(order.totalAmount || 0);
+    },
+
+    goToPosPage: function(id, name) {
+        localStorage.setItem('activeTableId', id);
+        localStorage.setItem('activeTableName', name);
+        localStorage.setItem('isViewOnly', 'false');
+        if (window.app) {
+            app.loadPage('pos-page', 'nav-pos');
+            if(window.menuApp) window.menuApp.updateHeaderTableInfo();
+        }
+    },
+
+    // ============================================================
+    // LOGIC 3: THANH TOÁN (VERTICAL + QR + RESET DATA FIX)
+    // ============================================================
+
+    openPaymentModal: async function(id, name) {
+        this.currentTableId = id;
+        
+        // 1. Reset dữ liệu cũ ngay lập tức để tránh hiện số tiền bàn trước
+        this.currentOrderTotal = 0; 
+        document.getElementById('modal-total-display').innerText = '...';
+        const checkoutItems = document.getElementById('checkout-order-items');
+        if(checkoutItems) checkoutItems.innerHTML = '';
+
         const modal = document.getElementById('checkout-modal');
         if(modal) {
             modal.style.display = 'flex';
             document.getElementById('modal-table-num').innerText = name.replace('Bàn ', '');
+
+            // 2. Fetch dữ liệu mới
+            try {
+                const res = await fetch(`${API_ORDERS}/table/${id}/active`);
+                if (res.ok) {
+                    const order = await res.json();
+                    this.currentOrderTotal = order.totalAmount || 0;
+                    this.renderCheckoutList(order);
+                } else {
+                    if(checkoutItems) checkoutItems.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:15px;">Chưa có món</td></tr>';
+                }
+            } catch (e) {
+                console.error(e);
+                if(checkoutItems) checkoutItems.innerHTML = '<tr><td colspan="3" style="text-align:center; color:red;">Lỗi tải dữ liệu</td></tr>';
+            }
+
+            // 3. Cập nhật UI hiển thị tiền
+            const fmt = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
+            document.getElementById('modal-total-display').innerText = fmt.format(this.currentOrderTotal);
+
+            // 4. Mặc định chọn Tiền mặt
+            const cashBtn = document.querySelector('.pay-method[data-method="CASH"]');
+            if(cashBtn) this.selectMethod(cashBtn);
         }
     },
 
+    renderCheckoutList: function(order) {
+        const container = document.getElementById('checkout-order-items');
+        if (!container) return;
+        const fmt = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
+        
+        if (!order.orderItems || order.orderItems.length === 0) {
+            container.innerHTML = '<tr><td colspan="3" style="text-align:center;">Không có món</td></tr>';
+            return;
+        }
+        container.innerHTML = order.orderItems.map(item => `
+            <tr>
+                <td style="padding:10px; border-bottom:1px solid #f1f5f9;">
+                    <div style="font-weight:600; font-size:14px;">${item.menuItem.name}</div>
+                </td>
+                <td style="text-align:center; padding:10px; border-bottom:1px solid #f1f5f9; font-weight:bold;">x${item.quantity}</td>
+                <td style="text-align:right; padding:10px; border-bottom:1px solid #f1f5f9;">${fmt.format(item.menuItem.price * item.quantity)}</td>
+            </tr>
+        `).join('');
+    },
+
     closeModal: function() {
-        const modal = document.getElementById('checkout-modal');
-        if(modal) modal.style.display = 'none';
+        document.getElementById('checkout-modal').style.display = 'none';
     },
 
     selectMethod: function(btn) {
         document.querySelectorAll('.pay-method').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
+
+        const method = btn.getAttribute('data-method');
+        const qrSection = document.getElementById('qr-payment-section');
+        // Chọn đúng container để scroll trong modal dọc
+        const scrollContainer = document.getElementById('checkout-body'); 
+
+        if (qrSection) {
+            if (method === 'QR') {
+                qrSection.style.display = 'block';
+                // Auto scroll xuống
+                if(scrollContainer) {
+                    setTimeout(() => {
+                        scrollContainer.scrollTo({ top: scrollContainer.scrollHeight, behavior: 'smooth' });
+                    }, 100);
+                }
+            } else {
+                qrSection.style.display = 'none';
+            }
+        }
     },
 
-    // 7. Xác nhận Thanh toán -> Trả bàn về trống
+    // --- QUAN TRỌNG: HÀM THANH TOÁN KÈM LOGIC RESET DỮ LIỆU ---
     confirmCheckout: async function() {
-        if (!this.currentPayTableId) return;
+        if (!this.currentTableId) return;
+        
+        const activeBtn = document.querySelector('.pay-method.active');
+        const method = activeBtn ? activeBtn.getAttribute('data-method') : 'CASH';
 
-        if (!confirm("Xác nhận thanh toán và đóng bàn này?")) return;
+        if (!confirm(`Xác nhận thanh toán và hoàn tất bàn này? (${method})`)) return;
 
         try {
-            // Gọi API thanh toán (Backend sẽ lo việc reset bàn)
             const paymentData = {
-                tableId: this.currentPayTableId,
-                amount: 0, // Tạm thời 0đ, sau này tính thật
-                method: 'CASH'
+                tableId: this.currentTableId,
+                amount: this.currentOrderTotal,
+                method: method 
             };
 
-            const res = await fetch(`http://localhost:8080/api/payment/pay`, {
+            const res = await fetch(`${API_PAYMENT}/pay`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(paymentData)
             });
 
             if (res.ok) {
-                alert(" Thanh toán thành công!");
+                alert("✅ Thanh toán thành công!");
+
+                // ============================================================
+                // [FIX LỖI] CLEANUP DATA (Xóa dữ liệu cũ)
+                // ============================================================
+                
+                // 1. Xóa dữ liệu trong LocalStorage
+                localStorage.removeItem('cart'); 
+                localStorage.removeItem('currentOrder');
+                localStorage.removeItem('activeTableId');
+                localStorage.removeItem('activeTableName');
+
+                // 2. Reset biến giỏ hàng trong bộ nhớ Javascript (menuApp)
+                if (window.menuApp && window.menuApp.state) {
+                    window.menuApp.state.cart = []; // Xóa mảng món ăn trong state
+                    
+                    // 3. Xóa giao diện danh sách món bên tab Menu (nếu DOM tồn tại)
+                    const cartContainer = document.getElementById('cart-items');
+                    if (cartContainer) {
+                        cartContainer.innerHTML = `
+                            <div class="empty-cart">
+                                <i class='bx bx-basket'></i>
+                                <p>Chưa có món nào</p>
+                            </div>`;
+                    }
+
+                    // 4. Reset các số tiền về 0đ
+                    const finalTotalElement = document.getElementById('final-total');
+                    const subTotalElement = document.getElementById('sub-total');
+                    const taxElement = document.getElementById('tax-amount');
+
+                    if (finalTotalElement) finalTotalElement.innerText = '0đ';
+                    if (subTotalElement) subTotalElement.innerText = '0đ';
+                    if (taxElement) taxElement.innerText = '0đ';
+                }
+                // ============================================================
+
                 this.closeModal();
-                this.loadTables(); // Load lại để thấy bàn xanh (trống) lại
+                await this.loadTables(); 
+                
             } else {
-                alert("Lỗi thanh toán!");
+                alert("❌ Lỗi thanh toán! Vui lòng thử lại.");
             }
         } catch (e) {
             console.error(e);
-            alert("Lỗi kết nối!");
+            alert("⚠️ Lỗi kết nối đến server!");
         }
     }
 };
 
 window.tableManager = tableManager;
-
-// Tự động chạy khi tải trang
-document.addEventListener('DOMContentLoaded', () => {
-    tableManager.init();
-});
+document.addEventListener('DOMContentLoaded', () => { tableManager.init(); });

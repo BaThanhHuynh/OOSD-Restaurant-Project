@@ -6,11 +6,10 @@
     <title>4TL POS System</title>
     
     <link rel="stylesheet" href="src/css/style.css">
-    <link rel="stylesheet" href="src/css/Menu.css">
-    <link rel="stylesheet" href="src/css/MenuManager.css">
     <link rel="stylesheet" href="src/css/TableManager.css">
     <link rel="stylesheet" href="src/css/KitchenMonitor.css">
-    <link rel="stylesheet" href="src/css/Settings.css">
+    <link rel="stylesheet" href="src/css/Statistic.css">
+
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
@@ -27,32 +26,24 @@
                 <a href="#" class="nav-item" id="nav-pos" onclick="app.loadPage('pos-page', 'nav-pos'); return false;">
                     <i class='bx bxs-dashboard icon'></i> Menu
                 </a>
-                
                 <a href="#" class="nav-item active" id="nav-tables" onclick="app.loadPage('tables-page', 'nav-tables'); return false;">
                     <i class='bx bx-grid-alt icon'></i> Quản lý bàn
                 </a>
-                
                 <a href="#" class="nav-item" id="nav-kitchen" onclick="app.loadPage('kitchen-page', 'nav-kitchen'); return false;">
                     <i class='bx bx-time icon'></i> Trạng thái món ăn
                 </a>
-                
                 <a href="#" class="nav-item" id="nav-admin" onclick="app.loadPage('menu-admin-page', 'nav-admin'); return false;">
                     <i class='bx bx-list-ul icon'></i> Quản lý Menu
                 </a>
-                
+                <a href="#" class="nav-item" id="nav-statistics" onclick="app.loadPage('statistics-page', 'nav-statistics'); return false;">
+                    <i class='bx bx-bar-chart-alt-2 icon'></i> Thống kê
+                </a>
                 <a href="#" class="nav-item" id="nav-settings" onclick="app.loadPage('settings-page', 'nav-settings'); return false;">
                     <i class='bx bx-cog icon'></i> Cài đặt
                 </a>
             </nav>
 
             <div class="sidebar-footer">
-                <div class="user-profile">
-                    <div class="avatar">U</div>
-                    <div class="user-info">
-                        <h4>Người dùng</h4>
-                        <span>Chức vụ</span>
-                    </div>
-                </div>
                 <button class="logout-btn" onclick="app.logout()">
                     <i class='bx bx-log-out'></i> Đăng xuất
                 </button>
@@ -61,25 +52,20 @@
 
         <main class="main-content">
             <header class="top-bar">
-                <button class="menu-toggle"><i class='bx bx-menu'></i></button>
                 <div class="search-bar">
                     <i class='bx bx-search'></i>
                     <input type="text" placeholder="Tìm kiếm...">
                 </div>
-                <button class="filter-btn"><i class='bx bx-slider-alt'></i></button>
             </header>
 
             <section id="pos-page" class="page" style="display: none; height: 100%; flex-direction: column;">
                 <div class="categories" id="categories-list"></div>
                 <div class="product-grid" id="product-grid"></div>
-                <div class="bottom-status-bar" id="tables-status-bar"></div>
             </section>
 
             <section id="tables-page" class="page active">
                 <div class="page-header">
                     <h2>Sơ đồ bàn & Trạng thái</h2>
-                    <button class="btn-primary-action" style="display: none;"> <i class='bx bx-plus'></i> Thêm bàn
-                    </button>
                 </div>
                 <div class="table-grid-container"></div>
             </section>
@@ -109,9 +95,16 @@
                             <i class='bx bx-plus'></i> Thêm món mới
                         </button>
                     </div>
-                    <div class="menu-admin-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:15px; overflow-y:auto; padding-bottom:50px;">
-                        </div>
+                    <div class="menu-admin-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:15px; max-height: 80vh; overflow-y:auto; padding-bottom:20px;"></div>
                 </div>
+            </section>
+
+            <section id="statistics-page" class="page" style="display: none;">
+                <div class="page-header">
+                     <h2>Tổng quan kinh doanh</h2>
+                     <button class="btn-refresh" onclick="Statistics.refreshData()"><i class='bx bx-refresh'></i> Làm mới</button>
+                </div>
+                <div style="padding: 20px;">Đang tải dữ liệu thống kê...</div>
             </section>
 
             <section id="settings-page" class="page" style="display: none;">
@@ -122,29 +115,14 @@
 
         <aside class="order-panel" id="main-order-panel" style="display: none;">
             <div class="order-header">
-                <div>
-                    <h2>Order</h2>
-                    <span>Hóa đơn tạm tính</span>
-                </div>
-                <button class="edit-btn"><i class='bx bx-edit-alt'></i></button>
+                <h2>Order</h2>
+                <span>Hóa đơn tạm tính</span>
             </div>
-
-            <div class="order-tabs">
-                <button class="tab-btn active">Món đã gọi</button>
-            </div>
-
             <div class="order-items-list" id="cart-items">
-                <div class="empty-cart">
-                    <i class='bx bx-basket'></i>
-                    <p>Chưa có món nào</p>
-                </div>
+                <div class="empty-cart"><p>Chưa có món nào</p></div>
             </div>
-
             <div class="payment-section">
                 <div class="summary-box">
-                    <div class="summary-row"><span>Tổng thu</span><span id="sub-total">0đ</span></div>
-                    <div class="summary-row"><span>Thuế (5%)</span><span id="tax-amount">0đ</span></div>
-                    <div class="summary-divider"></div>
                     <div class="summary-row total"><span>Tổng tiền</span><span id="final-total">0đ</span></div>
                 </div>
                 <button class="place-order-btn" onclick="menuApp.submitOrder()">Đặt món</button>
@@ -152,88 +130,145 @@
         </aside>
     </div>
 
+    <div id="guest-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="width: 350px;">
+            <div class="modal-header" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                <h3 style="color:#334155;"><i class='bx bx-user'></i> Số lượng khách</h3>
+                <button class="btn-close" onclick="tableManager.closeGuestModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <p style="margin-bottom: 15px; color: #64748b; text-align: center;">Nhập số người để mở bàn:</p>
+                <input type="number" id="guest-count-input" class="form-control" value="1" min="1" 
+                       style="width: 100%; padding: 15px; font-size: 24px; text-align: center; border: 2px solid #e2e8f0; border-radius: 12px; font-weight: bold; color: #334155;">
+            </div>
+            <div class="modal-footer" style="background: white; border: none; padding-bottom: 25px; padding-top: 0; justify-content: center;">
+                <button class="btn-confirm-pay" onclick="tableManager.confirmOpenTable()" style="width: 90%; background: #3b82f6; color: white; padding: 12px; border:none; border-radius:8px; font-weight:600; cursor: pointer;">
+                    Xác nhận mở bàn
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="table-detail-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="width: 800px; max-width: 95%; height: 85vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h3 id="detail-modal-title" style="font-size: 20px;">Chi tiết bàn</h3>
+                <button class="btn-close" onclick="tableManager.closeDetailModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="flex: 1; overflow-y: auto; background: #f8fafc; padding: 0;">
+                <div class="order-info-container" style="padding: 20px;">
+                    <table class="detail-table" style="width: 100%; border-collapse: separate; border-spacing: 0; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <thead>
+                            <tr style="background: #f1f5f9; color: #475569; text-align: left;">
+                                <th style="padding: 15px;">Món ăn</th>
+                                <th style="padding: 15px; text-align: center;">SL</th>
+                                <th style="padding: 15px; text-align: center;">Thời gian</th>
+                                <th style="padding: 15px; text-align: right;">Thành tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detail-order-list"></tbody>
+                    </table>
+                    <div id="detail-empty-msg" style="text-align: center; padding: 50px 20px; color: #94a3b8; display: none;">
+                        <i class='bx bx-dish' style="font-size: 64px; margin-bottom: 15px; color: #cbd5e1;"></i>
+                        <p style="font-size: 16px;">Bàn này chưa gọi món nào.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="background: white; border-top: 1px solid #e2e8f0; padding: 20px 30px; display: block;">
+                <div style="text-align: right; margin-bottom: 20px; font-size: 18px; color: #334155;">
+                    Tổng cộng: <strong id="detail-total-amount" style="color: #ef4444; font-size: 24px;">0 ₫</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <button id="btn-detail-order" class="btn-action" style="background: #10b981; color: white; padding: 0 30px; height: 50px; border-radius: 10px; font-size: 16px; font-weight: 600; border: none; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);">
+                        <i class='bx bx-plus-circle' style="margin-right: 8px; font-size: 20px;"></i> Gọi món
+                    </button>
+                    <button id="btn-detail-pay" class="btn-action" style="background: white; border: 2px solid #ef4444; color: #ef4444; padding: 0 30px; height: 50px; border-radius: 10px; font-size: 16px; font-weight: 600;">
+                        <i class='bx bx-credit-card' style="margin-right: 8px; font-size: 20px;"></i> Thanh toán
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="checkout-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-content">
+        <div class="modal-content" style="width: 500px; max-width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
+            
             <div class="modal-header">
                 <h3><i class='bx bx-receipt'></i> Thanh Toán - Bàn <span id="modal-table-num">0</span></h3>
                 <button onclick="tableManager.closeModal()" class="btn-close"><i class='bx bx-x'></i></button>
             </div>
-            <div class="modal-body">
-                <div id="modal-order-list" class="bill-list"></div>
-                <div class="bill-summary">
-                    <div class="row"><span>Tổng cộng:</span> <strong id="modal-total">0đ</strong></div>
-                </div>
+            
+            <div class="modal-body" style="padding: 20px; overflow-y: auto; background: #f8fafc; flex: 1;">
                 
+                <div style="text-align: center; margin-bottom: 20px; background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -2px rgba(0,0,0,0.05);">
+                    <span style="color: #64748b; font-size: 14px; text-transform: uppercase; font-weight: 600;">Tổng tiền cần thanh toán</span>
+                    <h2 id="modal-total-display" style="color: #ef4444; font-size: 42px; margin: 10px 0 0 0; font-weight: 800;">0 ₫</h2>
+                </div>
+
+                <div class="checkout-list-vertical" style="margin-bottom: 25px;">
+                    <h4 style="margin-bottom: 12px; color: #334155; font-size: 15px; font-weight: 600;">Chi tiết đơn hàng:</h4>
+                    <div style="max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; background: white;">
+                        <table class="checkout-items-table" style="width: 100%; border-collapse: collapse;">
+                            <thead style="background: #f1f5f9; color: #475569; font-size: 13px; position: sticky; top: 0; z-index: 1;">
+                                <tr>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600;">Món</th>
+                                    <th style="padding: 12px; text-align: center; font-weight: 600;">SL</th>
+                                    <th style="padding: 12px; text-align: right; font-weight: 600;">Tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody id="checkout-order-items">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <div class="modal-payment-options">
-                    <p>Phương thức thanh toán:</p>
-                    <div class="payment-grid">
-                        <button class="pay-method active" onclick="tableManager.selectMethod(this)">
+                    <p style="margin-bottom:12px; font-weight:600; color:#334155; font-size: 15px;">Phương thức thanh toán:</p>
+                    <div class="payment-grid" style="display: flex; gap: 10px;">
+                        <button class="pay-method active" data-method="CASH" onclick="tableManager.selectMethod(this)" style="flex:1;">
                             <i class='bx bx-money'></i> Tiền mặt
                         </button>
-                        <button class="pay-method" onclick="tableManager.selectMethod(this)">
+                        <button class="pay-method" data-method="CARD" onclick="tableManager.selectMethod(this)" style="flex:1;">
                             <i class='bx bx-credit-card'></i> Thẻ
                         </button>
-                        <button class="pay-method" onclick="tableManager.selectMethod(this)">
-                            <i class='bx bx-qr-scan'></i> QR
+                        <button class="pay-method" data-method="QR" onclick="tableManager.selectMethod(this)" style="flex:1;">
+                            <i class='bx bx-qr-scan'></i> Quét QR
                         </button>
+                    </div>
+
+                    <div id="qr-payment-section" style="display: none;">
+                        <div class="qr-wrapper">
+                            <div class="qr-frame">
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=ExamplePaymentData" 
+                                     alt="QR Code" class="qr-code-img">
+                                <div class="scan-line"></div>
+                            </div>
+                            <div class="qr-info">
+                                <p class="qr-text">Mở app ngân hàng để quét</p>
+                                <div class="wallet-badges">
+                                    <span class="badge badge-vietqr">VietQR</span>
+                                    <span class="badge badge-momo">MoMo</span>
+                                    <span class="badge badge-zalo">Zalo</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button class="btn-cancel" onclick="tableManager.closeModal()">Hủy</button>
+            
+            <div class="modal-footer" style="padding: 20px; background: white; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px;">
+                <button class="btn-cancel" onclick="tableManager.closeModal()">Hủy bỏ</button>
                 <button class="btn-confirm-pay" onclick="tableManager.confirmCheckout()">
-                    <i class='bx bx-check-circle'></i> Xác nhận
+                    <i class='bx bx-check-circle'></i> Xác nhận thanh toán
                 </button>
             </div>
         </div>
     </div>
 
     <div id="menu-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:2000; align-items:center; justify-content:center;">
-        <div style="background:white; width:450px; padding:30px; border-radius:16px; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+        <div style="background:white; width:450px; padding:30px; border-radius:16px;">
             <h2 style="color:#187a42; margin-bottom:20px; text-align:center;">Thêm Món Mới</h2>
-            
-            <div style="display:flex; flex-direction:column; gap:15px;">
-                <div>
-                    <label style="font-weight:600; font-size:13px; color:#666;">Tên món ăn</label>
-                    <input type="text" id="input-name" placeholder="Ví dụ: Bò bít tết" 
-                           style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; margin-top:5px;">
-                </div>
-
-                <div style="display:flex; gap:15px;">
-                    <div style="flex:1;">
-                        <label style="font-weight:600; font-size:13px; color:#666;">Giá bán (VNĐ)</label>
-                        <input type="number" id="input-price" placeholder="50000" 
-                               style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; margin-top:5px;">
-                    </div>
-                    <div style="flex:1;">
-                        <label style="font-weight:600; font-size:13px; color:#666;">Danh mục</label>
-                        <select id="input-category" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; margin-top:5px;">
-                            <option value="food">Đồ ăn</option>
-                            <option value="drinks">Thức uống</option>
-                            <option value="dessert">Tráng miệng</option>
-                            <option value="pasta">Món thêm</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div>
-                    <label style="font-weight:600; font-size:13px; color:#666;">Link hình ảnh</label>
-                    <input type="text" id="input-image" placeholder="src/assets/..." 
-                           style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; margin-top:5px;">
-                    <small style="color:#999;">Gợi ý: Copy đường dẫn ảnh từ folder assets (VD: src/assets/Pho.jpg)</small>
-                </div>
-            </div>
-
-            <div style="margin-top:25px; display:flex; gap:10px; justify-content:flex-end;">
-                <button onclick="document.getElementById('menu-modal').style.display='none'" 
-                        style="padding:10px 20px; border:none; background:#f1f2f6; color:#333; border-radius:8px; cursor:pointer; font-weight:600;">
-                    Hủy bỏ
-                </button>
-                <button onclick="menuManager.saveItem()" 
-                        style="padding:10px 25px; border:none; background:#187a42; color:white; border-radius:8px; cursor:pointer; font-weight:600; box-shadow:0 4px 10px rgba(24, 122, 66, 0.3);">
-                    Lưu Món
-                </button>
-            </div>
+            <button onclick="document.getElementById('menu-modal').style.display='none'">Đóng</button>
         </div>
     </div>
 
@@ -242,6 +277,7 @@
     <script src="src/js/TableManager.js"></script>
     <script src="src/js/KitchenMonitor.js"></script>
     <script src="src/js/MenuManager.js"></script> 
+    <script src="src/js/Statistic.js"></script> 
     <script src="src/js/Settings.js"></script>
     <script src="src/js/Menu.js"></script>
     <script src="src/js/app.js"></script>

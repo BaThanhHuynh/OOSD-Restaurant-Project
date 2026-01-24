@@ -2,141 +2,114 @@
    TABLE MANAGER STYLES - FIX FINAL
    ========================================= */
 
+/* 1. CONTAINER & GRID SYSTEM */
 .table-grid-container {
     height: calc(100vh - 180px);
     overflow-y: auto;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 20px;
     padding: 10px 10px 80px 10px;
 }
-
-/* Custom Scrollbar */
 .table-grid-container::-webkit-scrollbar { width: 6px; }
 .table-grid-container::-webkit-scrollbar-track { background: transparent; }
 .table-grid-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-.table-grid-container::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-/* --- THẺ BÀN (CARD) --- */
+/* 2. TABLE CARD */
 .table-card {
     background: var(--bg-white);
-    padding: 20px;
+    padding: 30px 20px; 
     border-radius: 16px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-    position: relative;
-    transition: all 0.3s;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+    position: relative; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border: 2px solid transparent !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    cursor: pointer; 
 }
+.table-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px -3px rgba(0, 0, 0, 0.15); }
+.table-card i { font-size: 56px; color: #cbd5e1; margin-bottom: 5px; transition: 0.3s; }
+.table-card h3 { font-size: 20px; font-weight: 700; color: #334155; margin: 0; }
+.table-card .table-status { font-size: 14px; font-weight: 500; color: #64748b; padding: 6px 14px; border-radius: 20px; background: #f1f5f9; }
 
-.table-card:hover {
-    transform: translateY(-5px);
-    border-color: #e2e8f0 !important;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-}
-
-.table-card i { font-size: 48px; margin-bottom: 5px; color: #cbd5e1; transition: 0.3s; }
-.table-card h3 { font-size: 18px; font-weight: 700; color: #333; margin: 0; }
-.table-card p.status-text { font-size: 14px; font-weight: 500; color: #64748b; margin: 0; }
-
-/* --- TRẠNG THÁI: CÓ KHÁCH (OCCUPIED) --- */
-.table-card.occupied {
-    background: #ecfdf5; /* Xanh lá nhạt */
-    border-color: transparent !important;
-}
+.table-card.occupied { background: #ecfdf5; border: 1px solid #a7f3d0 !important; }
 .table-card.occupied i { color: #10b981; }
-.table-card.occupied p.status-text { color: #10b981; font-weight: 700; }
-.table-card.occupied:hover { border-color: #10b981 !important; }
+.table-card.occupied h3 { color: #065f46; }
+.table-card.occupied .table-status { color: #047857; background: #d1fae5; font-weight: 600; }
+.table-card.occupied:hover { border-color: #10b981 !important; box-shadow: 0 10px 20px rgba(16, 185, 129, 0.2); }
+.table-card.available:hover { border-color: #cbd5e1 !important; }
 
-/* --- KHU VỰC NÚT BẤM (QUAN TRỌNG) --- */
-
-/* Wrapper để giữ 2 nút Gọi món và Xem nằm ngang */
-.table-actions-group {
-    display: flex !important;
-    flex-direction: row !important; /* Bắt buộc nằm ngang */
-    gap: 10px !important;
-    width: 100% !important;
-    margin-bottom: 10px;
+/* 3. MODAL CHUNG */
+.modal-overlay { 
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+    background: rgba(15, 23, 42, 0.65); z-index: 2000; 
+    display: flex; justify-content: center; align-items: center; backdrop-filter: blur(4px); 
 }
-
-/* Style chung cho nút */
-.btn-action, .btn-table-action {
-    opacity: 1 !important; /* BẮT BUỘC HIỆN */
-    visibility: visible !important;
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
-    transition: 0.2s;
-    height: 40px; /* Chiều cao cố định */
+.modal-content { 
+    background: white; border-radius: 16px; overflow: hidden; animation: zoomIn 0.2s ease-out; 
+    display: flex; flex-direction: column;
 }
-
-/* 1. NÚT MỞ BÀN */
-.btn-open {
-    width: 100%;
-    background: #f1f5f9 !important;
-    color: #475569 !important;
-}
-.btn-open:hover { background: #e2e8f0 !important; }
-
-/* 2. NÚT GỌI MÓN (Fix lỗi màu trắng) */
-.btn-order {
-    flex: 1.5 !important; /* Chiếm nhiều chỗ hơn */
-    background-color: #10b981 !important; /* Xanh lá đậm - BẮT BUỘC */
-    color: white !important; /* Chữ trắng */
-}
-.btn-order:hover {
-    background-color: #059669 !important;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-}
-
-/* 3. NÚT XEM (Fix lỗi ẩn) */
-.btn-view {
-    flex: 1 !important;
-    background-color: white !important; /* Nền trắng */
-    border: 1px solid #10b981 !important; /* Viền xanh */
-    color: #10b981 !important; /* Chữ xanh */
-}
-.btn-view:hover {
-    background-color: #ecfdf5 !important;
-}
-
-/* 4. NÚT THANH TOÁN */
-.btn-pay {
-    width: 100%;
-    background-color: white !important;
-    border: 1px solid #ef4444 !important; /* Đỏ */
-    color: #ef4444 !important;
-}
-.btn-pay:hover {
-    background-color: #ef4444 !important;
-    color: white !important;
-}
-
-/* --- MODAL (Giữ nguyên) --- */
-.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
-.modal-content { background: white; width: 450px; border-radius: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.2); overflow: hidden; animation: zoomIn 0.2s ease; }
 @keyframes zoomIn { from {transform: scale(0.95); opacity: 0;} to {transform: scale(1); opacity: 1;} }
-.modal-header { background: #10b981; color: white; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
-.modal-header h3 { font-size: 18px; font-weight: 600; margin: 0; }
-.btn-close { background: none; border: none; color: white; font-size: 24px; cursor: pointer; opacity: 0.8; }
-.modal-body { padding: 24px; max-height: 550px; overflow-y: auto; }
-.modal-payment-options { margin-top: 20px; padding-top: 15px; border-top: 1px dashed #e2e8f0; }
+
+.modal-header { background: white; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; }
+.modal-header h3 { font-size: 18px; font-weight: 600; color: #1e293b; margin: 0; }
+.btn-close { background: none; border: none; font-size: 24px; color: #64748b; cursor: pointer; transition: 0.2s; }
+.btn-close:hover { color: #ef4444; transform: rotate(90deg); }
+
+/* 4. DETAIL MODAL & GUEST MODAL (Giữ nguyên) */
+#table-detail-modal .modal-body { background: #f8fafc; padding: 0; overflow-y: auto; }
+.order-info-container { padding: 20px; }
+.detail-table { width: 100%; border-collapse: separate; border-spacing: 0; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+.detail-table th { background: #f1f5f9; padding: 15px; border-bottom: 2px solid #e2e8f0; color: #475569; text-align: left; font-weight: 600; }
+.detail-table td { padding: 15px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+.detail-table tbody tr:hover { background: #f8fafc; }
+#table-detail-modal .modal-footer { padding: 20px 30px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: white; }
+
+.btn-action { height: 46px; padding: 0 24px; border-radius: 10px; font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s; }
+#btn-detail-order { background: #10b981; color: white; border: none; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2); }
+#btn-detail-order:hover { background: #059669; transform: translateY(-2px); }
+#btn-detail-pay { background: white; border: 1px solid #ef4444; color: #ef4444; }
+#btn-detail-pay:hover { background: #ef4444; color: white; transform: translateY(-2px); }
+
+#guest-modal .modal-content { width: 350px; }
+#guest-modal .form-control { width: 100%; padding: 15px; font-size: 20px; text-align: center; font-weight: 700; border: 2px solid #e2e8f0; border-radius: 10px; outline: none; color: #334155; transition: 0.2s; }
+#guest-modal .form-control:focus { border-color: #10b981; box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1); }
+
+
+/* =========================================
+   6. CHECKOUT MODAL (VERTICAL STYLES - NEW)
+   ========================================= */
+
+/* List món ăn thu gọn */
+.checkout-items-table th { padding: 10px; text-align: left; font-weight: 600; border-bottom: 1px solid #e2e8f0; }
+.checkout-items-table td { padding: 10px; font-size: 14px; color: #334155; border-bottom: 1px solid #f1f5f9; }
+.checkout-list-vertical ::-webkit-scrollbar { width: 4px; }
+.checkout-list-vertical ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+/* Các nút phương thức thanh toán */
+.modal-payment-options { margin-top: 0; }
 .payment-grid { display: flex; gap: 10px; }
-.pay-method { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; padding: 12px; border: 1px solid #e2e8f0; background: white; border-radius: 10px; cursor: pointer; transition: 0.2s; color: #64748b; font-size: 13px; font-weight: 500; }
-.pay-method i { font-size: 24px; }
+.pay-method { 
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; 
+    padding: 12px; border: 1px solid #e2e8f0; background: white; border-radius: 10px; 
+    cursor: pointer; transition: 0.2s; color: #64748b; font-size: 13px; font-weight: 500; 
+}
 .pay-method.active { border-color: #10b981; background: #ecfdf5; color: #10b981; font-weight: 700; }
-.bill-list { margin-bottom: 20px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 15px; }
-.bill-summary { text-align: right; font-size: 16px; color: #64748b; }
-.bill-summary strong { color: #ef4444; font-size: 24px; font-weight: 700; display: block; margin-top: 5px; }
-.modal-footer { padding: 16px 24px; background: #f8fafc; display: flex; gap: 12px; justify-content: flex-end; }
-.btn-cancel { padding: 12px 20px; border: 1px solid #cbd5e1; background: white; border-radius: 10px; cursor: pointer; font-weight: 600; color: #64748b; }
-.btn-confirm-pay { padding: 12px 24px; background: #10b981; color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; }
+
+/* Nút footer */
+.btn-cancel { padding: 10px 20px; border: 1px solid #cbd5e1; background: white; border-radius: 8px; cursor: pointer; font-weight: 600; color: #64748b; font-size: 14px; }
+.btn-confirm-pay { padding: 10px 24px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 5px; }
+.modal-footer { display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #e2e8f0; background: white; }
+
+/* 7. QR CODE STYLES (ĐÃ TỐI ƯU CHO VERTICAL) */
+#qr-payment-section { margin-top: 15px; animation: slideDown 0.4s ease-out; }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+.qr-wrapper { display: flex; flex-direction: column; align-items: center; background: white; border: 1px dashed #cbd5e1; border-radius: 12px; padding: 15px; }
+.qr-frame { position: relative; padding: 5px; background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; }
+.qr-code-img { width: 140px; height: 140px; display: block; }
+.qr-info { text-align: center; margin-top: 10px; }
+.qr-text { font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 8px; }
+.wallet-badges { display: flex; justify-content: center; gap: 5px; }
+.badge { padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; color: white; cursor: default; }
+.badge-vietqr { background: linear-gradient(135deg, #00558F, #007bc3); }
+.badge-momo { background: linear-gradient(135deg, #d82d8b, #f062b2); }
+.badge-zalo { background: linear-gradient(135deg, #0068ff, #42a5f5); }

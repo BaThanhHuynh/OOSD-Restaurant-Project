@@ -110,6 +110,9 @@ const app = {
             case 'settings-page':
                 if(window.settingsApp) window.settingsApp.init();
                 break;
+            case 'statistics-page':
+                if(window.statsApp) window.statsApp.init();
+                break;
         }
     },
 
