@@ -21,7 +21,6 @@ import jakarta.persistence.OneToMany;
 
 /**
  * Entity đại diện cho một Order (Đơn hàng)
- * Một Order thuộc về một bàn và chứa nhiều OrderItem
  */
 @Entity
 @jakarta.persistence.Table(name = "orders")
@@ -40,9 +39,15 @@ public class Order {
     @JsonManagedReference
     private List<OrderItem> orderItems = new ArrayList<>();
 
+    // --- [LOGIC MỚI] Trạng thái quy trình (New -> Cooking -> Completed -> Paid) ---
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "order_status", nullable = false)
     private OrderStatus orderStatus;
+
+    // --- [LOGIC CŨ] Trạng thái thanh toán của DB (unpaid -> paid) ---
+    // [QUAN TRỌNG] Thêm dòng này để map với cột payment_status trong database
+    @Column(name = "payment_status")
+    private String paymentStatus = "unpaid"; 
 
     @Column(nullable = false)
     private LocalDateTime orderTime;
@@ -56,6 +61,7 @@ public class Order {
     public Order() {
         this.orderTime = LocalDateTime.now();
         this.orderStatus = OrderStatus.NEW;
+        this.paymentStatus = "unpaid"; // Mặc định khi tạo mới
     }
 
     // Constructor với table
@@ -66,46 +72,30 @@ public class Order {
 
     // ======= BUSINESS METHODS =======
 
-    /**
-     * Thêm món vào order
-     */
     public void addItem(OrderItem item) {
         this.orderItems.add(item);
-        item.setOrder(this); // Set bidirectional relationship
+        item.setOrder(this);
         calculateTotalAmount();
     }
 
-    /**
-     * Xóa món khỏi order
-     */
     public void removeItem(OrderItem item) {
         this.orderItems.remove(item);
-        item.setOrder(null); // Remove relationship
+        item.setOrder(null);
         calculateTotalAmount();
     }
 
-    /**
-     * Tính tổng tiền của order
-     */
     public void calculateTotalAmount() {
         this.totalAmount = orderItems.stream()
                 .mapToDouble(OrderItem::calculateSubtotal)
                 .sum();
     }
 
-    /**
-     * Đánh dấu order là hoàn thành
-     */
     public void completeOrder() {
         this.orderStatus = OrderStatus.COMPLETED;
         this.completedTime = LocalDateTime.now();
     }
 
-    /**
-     * Cập nhật trạng thái order dựa trên trạng thái của các món
-     */
     public void updateOrderStatus() {
-        // [QUAN TRỌNG] Nếu đơn đã thanh toán thì không cho update ngược lại nữa
         if (this.orderStatus == OrderStatus.PAID) {
             return;
         }
@@ -114,7 +104,7 @@ public class Order {
                 .allMatch(item -> item.getDishStatus().toString().equals("SERVED"));
         
         if (allServed && !orderItems.isEmpty()) {
-            this.orderStatus = OrderStatus.COMPLETED; // Khách đã nhận đủ món (nhưng chưa tính tiền)
+            this.orderStatus = OrderStatus.COMPLETED;
             this.completedTime = LocalDateTime.now();
         } else if (!orderItems.isEmpty()) {
             this.orderStatus = OrderStatus.IN_PROGRESS;
@@ -123,71 +113,31 @@ public class Order {
 
     // ======= GETTERS & SETTERS =======
 
-    public Long getOrderId() {
-        return orderId;
-    }
+    public Long getOrderId() { return orderId; }
+    public void setOrderId(Long orderId) { this.orderId = orderId; }
 
-    public void setOrderId(Long orderId) {
-        this.orderId = orderId;
-    }
+    public Table getTable() { return table; }
+    public void setTable(Table table) { this.table = table; }
 
-    public Table getTable() {
-        return table;
-    }
-
-    public void setTable(Table table) {
-        this.table = table;
-    }
-
-    public List<OrderItem> getOrderItems() {
-        return orderItems;
-    }
-
+    public List<OrderItem> getOrderItems() { return orderItems; }
     public void setOrderItems(List<OrderItem> orderItems) {
         this.orderItems = orderItems;
         calculateTotalAmount();
     }
 
-    public OrderStatus getOrderStatus() {
-        return orderStatus;
-    }
+    public OrderStatus getOrderStatus() { return orderStatus; }
+    public void setOrderStatus(OrderStatus orderStatus) { this.orderStatus = orderStatus; }
 
-    public void setOrderStatus(OrderStatus orderStatus) {
-        this.orderStatus = orderStatus;
-    }
+    // [QUAN TRỌNG] Getter & Setter cho paymentStatus
+    public String getPaymentStatus() { return paymentStatus; }
+    public void setPaymentStatus(String paymentStatus) { this.paymentStatus = paymentStatus; }
 
-    public LocalDateTime getOrderTime() {
-        return orderTime;
-    }
+    public LocalDateTime getOrderTime() { return orderTime; }
+    public void setOrderTime(LocalDateTime orderTime) { this.orderTime = orderTime; }
 
-    public void setOrderTime(LocalDateTime orderTime) {
-        this.orderTime = orderTime;
-    }
+    public LocalDateTime getCompletedTime() { return completedTime; }
+    public void setCompletedTime(LocalDateTime completedTime) { this.completedTime = completedTime; }
 
-    public LocalDateTime getCompletedTime() {
-        return completedTime;
-    }
-
-    public void setCompletedTime(LocalDateTime completedTime) {
-        this.completedTime = completedTime;
-    }
-
-    public double getTotalAmount() {
-        return totalAmount;
-    }
-
-    public void setTotalAmount(double totalAmount) {
-        this.totalAmount = totalAmount;
-    }
-
-    @Override
-    public String toString() {
-        return "Order{" +
-                "orderId=" + orderId +
-                ", table=" + table.getName() +
-                ", orderStatus=" + orderStatus +
-                ", totalAmount=" + totalAmount +
-                ", items=" + orderItems.size() +
-                '}';
-    }
+    public double getTotalAmount() { return totalAmount; }
+    public void setTotalAmount(double totalAmount) { this.totalAmount = totalAmount; }
 }

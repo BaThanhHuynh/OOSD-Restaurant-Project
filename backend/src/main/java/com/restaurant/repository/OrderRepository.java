@@ -34,9 +34,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
      * Tìm order đang active của một bàn.
      * Active nghĩa là CHƯA THANH TOÁN (PAID), còn COMPLETED (đã lên món xong) vẫn tính là active.
      */
-    @Query("SELECT o FROM Order o WHERE o.table.id = :tableId AND o.orderStatus != 'PAID'")
+    @Query("SELECT o FROM Order o WHERE o.table.id = :tableId AND o.orderStatus IN ('NEW', 'IN_PROGRESS', 'COMPLETED')")
     Optional<Order> findActiveOrderByTableId(@Param("tableId") int tableId);
-
     /**
      * Tìm tất cả orders theo trạng thái
      */

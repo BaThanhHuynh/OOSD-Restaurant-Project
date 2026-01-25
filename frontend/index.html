@@ -100,11 +100,76 @@
             </section>
 
             <section id="statistics-page" class="page" style="display: none;">
-                <div class="page-header">
-                     <h2>Tổng quan kinh doanh</h2>
-                     <button class="btn-refresh" onclick="Statistics.refreshData()"><i class='bx bx-refresh'></i> Làm mới</button>
+                <div class="stats-header">
+                    <div>
+                        <h2>Tổng Quan Kinh Doanh</h2>
+                        <p class="text-muted">Số liệu cập nhật theo thời gian thực</p>
+                    </div>
+                    <button class="btn-refresh" onclick="Statistics.refreshData()">
+                        <i class='bx bx-refresh'></i> Làm mới
+                    </button>
                 </div>
-                <div style="padding: 20px;">Đang tải dữ liệu thống kê...</div>
+            
+                <div class="stats-grid">
+                    <div class="stat-box revenue">
+                        <div class="stat-icon"><i class='bx bx-wallet'></i></div>
+                        <div class="stat-info">
+                            <p>Doanh Thu</p>
+                            <h4 id="stat-revenue">0 ₫</h4>
+                        </div>
+                    </div>
+                    <div class="stat-box orders">
+                        <div class="stat-icon"><i class='bx bx-cart-alt'></i></div>
+                        <div class="stat-info">
+                            <p>Tổng Đơn</p>
+                            <h4 id="stat-orders">0</h4>
+                        </div>
+                    </div>
+                    <div class="stat-box average">
+                        <div class="stat-icon"><i class='bx bx-line-chart'></i></div>
+                        <div class="stat-info">
+                            <p>Trung Bình Đơn</p>
+                            <h4 id="stat-aov">0 ₫</h4>
+                        </div>
+                    </div>
+                    <div class="stat-box active">
+                        <div class="stat-icon"><i class='bx bx-dish'></i></div>
+                        <div class="stat-info">
+                            <p>Đang Phục Vụ</p>
+                            <h4 id="stat-active">0</h4>
+                        </div>
+                    </div>
+                </div>
+            
+                <div class="details-grid">
+                    <div class="card-panel">
+                        <div class="card-header">
+                            <h3><i class='bx bxs-crown'></i> Top Món Bán Chạy</h3>
+                        </div>
+                        <div class="card-body" id="top-products-list">
+                            <p class="empty-text">Đang tải dữ liệu...</p>
+                        </div>
+                    </div>
+            
+                    <div class="card-panel">
+                        <div class="card-header">
+                            <h3><i class='bx bx-time-five'></i> Đơn Hàng Gần Đây</h3>
+                        </div>
+                        <div class="card-body no-padding">
+                            <table class="recent-table">
+                                <thead>
+                                    <tr>
+                                        <th>Mã Đơn</th>
+                                        <th>Tổng Tiền</th>
+                                        <th>Trạng Thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recent-orders-list">
+                                     </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <section id="settings-page" class="page" style="display: none;">
@@ -265,10 +330,61 @@
         </div>
     </div>
 
-    <div id="menu-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:2000; align-items:center; justify-content:center;">
-        <div style="background:white; width:450px; padding:30px; border-radius:16px;">
-            <h2 style="color:#187a42; margin-bottom:20px; text-align:center;">Thêm Món Mới</h2>
-            <button onclick="document.getElementById('menu-modal').style.display='none'">Đóng</button>
+    <div id="menu-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="width: px;">
+            <div class="modal-header">
+                <h3><i class='bx bx-plus-circle'></i> Thêm Món Mới</h3>
+                <button class="btn-close" onclick="menuManager.closeModal()">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Tên món ăn <span style="color:red">*</span></label>
+                    <input type="text" id="input-name" class="form-control" placeholder="Ví dụ: Cơm tấm sườn bì">
+                </div>
+
+                <div class="row" style="display: flex; gap: 15px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Giá bán (VNĐ) <span style="color:red">*</span></label>
+                        <input type="number" id="input-price" class="form-control" placeholder="50000">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Danh mục</label>
+                        <select id="input-category" class="form-control">
+                            <option value="food">Đồ ăn (Food)</option>
+                            <option value="drink">Đồ uống (Drink)</option>
+                            <option value="dessert">Tráng miệng (Dessert)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Hình ảnh món ăn</label>
+                    
+                    <div class="upload-container">
+                        <div class="image-preview-box">
+                            <img id="img-preview" src="src/assets/foodicon.jpg" alt="Preview">
+                        </div>
+
+                        <div class="upload-actions">
+                            <label for="file-upload-input" class="btn-upload">
+                                <i class='bx bx-cloud-upload'></i> Chọn ảnh từ máy
+                            </label>
+                            <input type="file" id="file-upload-input" accept="image/*" hidden onchange="menuManager.handleImageSelect(this)">
+                            
+                            <input type="hidden" id="input-image-final">
+                            
+                            <p class="upload-note">Hỗ trợ: JPG, PNG, JPEG</p>
+                        </div>
+                    </div>
+                </div>
+
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="menuManager.closeModal()">Hủy</button>
+                <button class="btn-confirm-pay" onclick="menuManager.saveItem()">
+                    <i class='bx bx-save'></i> Lưu món
+                </button>
+            </div>
         </div>
     </div>
 

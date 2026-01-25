@@ -14,7 +14,7 @@ const menuManager = {
             if (e.target === modal) modal.style.display = 'none';
         });
 
-        const closeBtn = modal.querySelector('.close');
+        const closeBtn = modal.querySelector('.btn-close');
         if (closeBtn) {
             closeBtn.addEventListener('click', () => {
                 modal.style.display = 'none';
@@ -57,7 +57,7 @@ const menuManager = {
         const newItem = {
             name: name,
             price: parseFloat(priceStr),
-            imageUrl: image || 'src/assets/Nha_hang.jpg',
+            imageUrl: image,
             categoryId: category,
             status: 'available'
         };
@@ -112,32 +112,42 @@ const menuManager = {
         }
     },
 
-    renderAdminMenu: async function() {
+renderAdminMenu: async function() {
         const container = document.querySelector('.menu-admin-grid');
         if (!container) return;
 
         try {
-            container.innerHTML = `<p style="text-align:center; color:#666; padding:20px;"> Đang tải...</p>`;
+            container.innerHTML = `<p style="text-align:center; color:#666; padding:20px;">⏳ Đang tải...</p>`;
 
-            // [SỬA LỖI Ở ĐÂY]: Dùng API_MENU
             const response = await fetch(API_MENU);
             if (!response.ok) throw new Error("HTTP Error");
 
             const items = await response.json();
 
             if (!Array.isArray(items) || items.length === 0) {
-                container.innerHTML = `<p style="text-align:center; padding:20px;"> Chưa có món nào.</p>`;
+                container.innerHTML = `<p style="text-align:center; padding:20px;">📭 Chưa có món nào.</p>`;
                 return;
             }
 
-            container.innerHTML = items.map(item => `
+            // ĐƯỜNG DẪN ẢNH MẶC ĐỊNH (Sửa lại đường dẫn này cho đúng với dự án của bạn)
+            // Nếu bạn chạy file index.html từ thư mục gốc, thường sẽ là './assets/...' hoặc 'assets/...'
+            const defaultImg = 'src/assets/Nha_hang.jpg'; 
+            
+            // Link ảnh online dự phòng trường hợp ảnh local cũng lỗi
+            const fallbackOnline = 'https://placehold.co/100?text=No+Image';
+
+            container.innerHTML = items.map(item => {
+                // Kiểm tra nếu url rỗng hoặc null thì dùng ảnh mặc định ngay từ đầu
+                const displayImage = (item.imageUrl && item.imageUrl.trim() !== '') ? item.imageUrl : defaultImg;
+
+                return `
                 <div class="menu-item-card" 
                      style="border:1px solid #eee; padding:15px; border-radius:12px; display:flex; gap:15px; align-items:center; background:white; margin-bottom:10px;">
                     
-                    <div style="width:70px; height:70px; border-radius:8px; overflow:hidden; flex-shrink:0;">
-                        <img src="${item.imageUrl}" alt="${item.name}" 
+                    <div style="width:70px; height:70px; border-radius:8px; overflow:hidden; flex-shrink:0; background:#f0f0f0;">
+                        <img src="${displayImage}" alt="${item.name}" 
                              style="width:100%; height:100%; object-fit:cover;"
-                             onerror="this.src='src/assets/Nha_hang.jpg'"> 
+                             onerror="this.onerror=null; this.src='${defaultImg}'; this.parentElement.querySelector('img').src='${fallbackOnline}';"> 
                     </div>
                     
                     <div style="flex:1;">
@@ -153,14 +163,13 @@ const menuManager = {
                         <i class='bx bxs-trash'></i>
                     </button>
                 </div>
-            `).join('');
+            `}).join('');
 
         } catch (error) {
             console.error(error);
-            container.innerHTML = `<p style="color:red; text-align:center;"> Lỗi tải dữ liệu!</p>`;
+            container.innerHTML = `<p style="color:red; text-align:center;">⚠️ Lỗi tải dữ liệu!</p>`;
         }
     },
-
     formatMoney: function(amount) {
         return (parseFloat(amount) || 0).toLocaleString('vi-VN') + ' đ';
     }

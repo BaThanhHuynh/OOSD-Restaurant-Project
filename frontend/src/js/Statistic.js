@@ -1,129 +1,200 @@
 /**
  * frontend/src/js/Statistics.js
- * Module xử lý tính toán số liệu thống kê từ API
+ * Module xử lý thống kê nâng cao
  */
 
 const Statistics = {
-    // Hàm khởi tạo, được gọi khi người dùng bấm vào tab Thống kê
+    // Cờ kiểm tra đang tải
+    isLoading: false,
+
     init: function() {
-        console.log("Đang khởi tạo module Thống kê...");
+        console.log("Khởi tạo module Thống kê...");
         this.fetchAndCalculate();
     },
 
-    // Hàm gọi khi bấm nút "Làm mới"
     refreshData: function() {
-        // Hiệu ứng loading nhẹ
-        document.getElementById('stat-revenue').innerText = '...';
-        document.getElementById('stat-total-orders').innerText = '...';
-        this.fetchAndCalculate();
+        if (this.isLoading) return;
+        
+        // Hiệu ứng UX khi refresh
+        const btn = document.querySelector('.btn-refresh i');
+        if(btn) btn.classList.add('fa-spin');
+        
+        this.fetchAndCalculate().finally(() => {
+            if(btn) btn.classList.remove('fa-spin');
+        });
     },
 
-    // 1. Lấy dữ liệu từ Backend
     fetchAndCalculate: async function() {
+        this.isLoading = true;
         try {
-            // API_ORDERS được định nghĩa trong api.js (http://localhost:8080/api/orders)
-            // Nếu chưa có, đảm bảo api.js có dòng: const API_ORDERS = "http://localhost:8080/api/orders";
+            // API_ORDERS từ api.js
             const response = await fetch(API_ORDERS);
-            
-            if (!response.ok) {
-                throw new Error(`Lỗi API: ${response.status}`);
-            }
+            if (!response.ok) throw new Error('Không thể tải dữ liệu đơn hàng');
 
             const orders = await response.json();
-            this.calculateMetrics(orders);
+            
+            // Xử lý dữ liệu
+            this.processData(orders);
 
         } catch (error) {
-            console.error("Lỗi khi tải thống kê:", error);
-            alert("Không thể tải dữ liệu thống kê. Vui lòng kiểm tra kết nối Server.");
+            console.error("Lỗi thống kê:", error);
+            document.getElementById('top-products-list').innerHTML = 
+                `<p style="color:red; text-align:center;">Lỗi kết nối: ${error.message}</p>`;
+        } finally {
+            this.isLoading = false;
         }
     },
 
-    // 2. Tính toán các chỉ số
-    calculateMetrics: function(orders) {
-        let totalRevenue = 0;       // Tổng doanh thu
-        let totalOrders = orders.length; // Tổng số đơn
-        let activeOrders = 0;       // Đơn đang phục vụ
-        
-        // Map dùng để đếm số lượng món: { "Phở Bò": 10, "Trà Đào": 5 }
-        let dishFrequency = {}; 
+    processData: function(orders) {
+        // --- 1. Tổng hợp chỉ số cơ bản ---
+        let totalRevenue = 0;
+        let activeOrdersCount = 0;
+        let validOrdersCount = 0; // Đơn tính vào doanh thu (Đã xong/Đã trả)
+
+        // Map tần suất món ăn
+        let dishMap = {};
 
         orders.forEach(order => {
-            // --- TÍNH DOANH THU ---
-            // Chỉ cộng tiền nếu đơn hàng đã Hoàn tất (COMPLETED) hoặc Bàn đã thanh toán (PAID)
-            // Kiểm tra null safe bằng ?.
-            const status = order.orderStatus;
-            
-            // Logic: Nếu order đã hoàn thành, hoặc (nếu có trường tableStatus) bàn đã trả tiền
+            const status = order.orderStatus; // NEW, IN_PROGRESS, COMPLETED, PAID, CANCELLED
+
+            // Tính doanh thu (chỉ tính đơn đã hoàn tất/thanh toán)
             if (status === 'COMPLETED' || status === 'PAID') {
                 totalRevenue += (order.totalAmount || 0);
+                validOrdersCount++;
             }
 
-            // --- TÍNH ĐƠN ĐANG PHỤC VỤ ---
-            // NEW (Mới gọi) hoặc IN_PROGRESS (Đang làm/Đã lên món nhưng chưa thanh toán)
-            if (status === 'NEW' || status === 'IN_PROGRESS') {
-                activeOrders++;
+            // Đếm đơn đang phục vụ
+            if (status === 'NEW' || status === 'IN_PROGRESS' || status === 'COOKING' || status === 'READY' || status === 'SERVED') {
+                activeOrdersCount++;
             }
 
-            // --- TÌM MÓN BÁN CHẠY ---
-            if (order.orderItems && Array.isArray(order.orderItems)) {
+            // Thống kê món ăn (tất cả các đơn trừ đơn hủy)
+            if (status !== 'CANCELLED' && order.orderItems) {
                 order.orderItems.forEach(item => {
-                    // Lấy tên món. Cần kiểm tra menuItem có tồn tại không
-                    const dishName = item.menuItem ? item.menuItem.name : "Món đã xóa";
+                    const name = item.menuItem ? item.menuItem.name : "Món đã xóa";
                     const qty = item.quantity || 0;
-
-                    if (dishFrequency[dishName]) {
-                        dishFrequency[dishName] += qty;
-                    } else {
-                        dishFrequency[dishName] = qty;
-                    }
+                    dishMap[name] = (dishMap[name] || 0) + qty;
                 });
             }
         });
 
-        // Tìm món có số lượng cao nhất trong Map
-        let bestSellerName = "Chưa có dữ liệu";
-        let bestSellerQty = 0;
+        // Tính AOV (Giá trị trung bình đơn)
+        const avgOrderValue = validOrdersCount > 0 ? (totalRevenue / validOrdersCount) : 0;
 
-        for (const [name, qty] of Object.entries(dishFrequency)) {
-            if (qty > bestSellerQty) {
-                bestSellerQty = qty;
-                bestSellerName = name;
-            }
-        }
+        // --- 2. Xử lý Top Món Ăn ---
+        // Chuyển Map thành Array -> Sort giảm dần -> Lấy top 5
+        const sortedDishes = Object.entries(dishMap)
+            .sort(([, a], [, b]) => b - a)
+            .slice(0, 5);
 
-        // Gửi dữ liệu đi hiển thị
-        this.renderToView({
+        // --- 3. Lấy danh sách đơn gần đây (đảo ngược mảng để lấy mới nhất) ---
+        // Copy mảng để không ảnh hưởng mảng gốc, sau đó reverse và lấy 6 đơn đầu
+        const recentOrders = [...orders].reverse().slice(0, 6);
+
+        // --- 4. Render ra View ---
+        this.renderOverview({
             revenue: totalRevenue,
-            totalOrders: totalOrders,
-            activeOrders: activeOrders,
-            bestName: bestSellerName,
-            bestQty: bestSellerQty
+            totalOrders: orders.length, // Tổng tất cả các đơn trong DB
+            active: activeOrdersCount,
+            aov: avgOrderValue
         });
+
+        this.renderTopProducts(sortedDishes);
+        this.renderRecentOrders(recentOrders);
     },
 
-    // 3. Hiển thị lên giao diện HTML
-    renderToView: function(data) {
-        // Định dạng tiền tệ VNĐ (ví dụ: 150.000 ₫)
-        const formatter = new Intl.NumberFormat('vi-VN', { 
-            style: 'currency', 
-            currency: 'VND' 
-        });
-
-        // Gán vào các thẻ ID trong HTML
-        const elRevenue = document.getElementById('stat-revenue');
-        const elTotal = document.getElementById('stat-total-orders');
-        const elActive = document.getElementById('stat-active-orders');
-        const elBestName = document.getElementById('stat-best-seller');
-        const elBestQty = document.getElementById('stat-best-seller-qty');
-
-        if(elRevenue) elRevenue.innerText = formatter.format(data.revenue);
-        if(elTotal) elTotal.innerText = data.totalOrders;
-        if(elActive) elActive.innerText = data.activeOrders;
+    // Render 4 ô chỉ số
+    renderOverview: function(data) {
+        const fmt = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
         
-        if(elBestName) elBestName.innerText = data.bestName;
-        if(elBestQty) elBestQty.innerText = `(${data.bestQty} lượt gọi)`;
+        const setTxt = (id, val) => {
+            const el = document.getElementById(id);
+            if(el) el.innerText = val;
+        };
+
+        setTxt('stat-revenue', fmt.format(data.revenue));
+        setTxt('stat-orders', data.totalOrders);
+        setTxt('stat-aov', fmt.format(data.aov));
+        setTxt('stat-active', data.active);
+    },
+
+    // Render danh sách Top món ăn
+    renderTopProducts: function(topList) {
+        const container = document.getElementById('top-products-list');
+        if (!container) return;
+
+        if (topList.length === 0) {
+            container.innerHTML = '<p class="text-muted text-center">Chưa có dữ liệu món ăn</p>';
+            return;
+        }
+
+        // Tìm số lượng lớn nhất để tính % cho thanh progress
+        const maxQty = topList[0][1]; 
+
+        let html = '';
+        topList.forEach(([name, qty]) => {
+            const percent = (qty / maxQty) * 100;
+            html += `
+                <div class="top-item">
+                    <div class="rank-badge"><i class="fas fa-trophy"></i></div>
+                    <div class="item-info">
+                        <span class="item-name">${name}</span>
+                        <div class="progress-bg">
+                            <div class="progress-bar" style="width: ${percent}%"></div>
+                        </div>
+                    </div>
+                    <div class="item-qty">${qty}</div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    },
+
+    // Render bảng đơn hàng gần đây
+    renderRecentOrders: function(orders) {
+        const container = document.getElementById('recent-orders-list');
+        if (!container) return;
+
+        if (orders.length === 0) {
+            container.innerHTML = '<tr><td colspan="3" class="text-center">Chưa có đơn hàng</td></tr>';
+            return;
+        }
+
+        const fmt = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
+        
+        let html = '';
+        orders.forEach(order => {
+            let statusClass = 'st-new';
+            let statusLabel = 'Mới';
+            let color = '#3498db';
+
+            switch(order.orderStatus) {
+                case 'COMPLETED': 
+                case 'PAID': 
+                    statusClass = 'st-paid'; statusLabel = 'Đã xong'; color = '#27ae60'; 
+                    break;
+                case 'CANCELLED': 
+                    statusClass = 'st-cancel'; statusLabel = 'Đã hủy'; color = '#e74c3c'; 
+                    break;
+                case 'IN_PROGRESS':
+                case 'COOKING': 
+                    statusClass = 'st-new'; statusLabel = 'Đang làm'; color = '#f39c12'; 
+                    break;
+            }
+
+            html += `
+                <tr>
+                    <td><strong>#${order.id}</strong></td>
+                    <td style="color: #2c3e50; font-weight:600;">${fmt.format(order.totalAmount || 0)}</td>
+                    <td>
+                        <span class="status-dot" style="background:${color}"></span>
+                        <span style="color:${color}; font-size:12px; font-weight:600;">${statusLabel}</span>
+                    </td>
+                </tr>
+            `;
+        });
+        container.innerHTML = html;
     }
 };
 
-// Expose ra window để app.js có thể gọi
 window.Statistics = Statistics;
