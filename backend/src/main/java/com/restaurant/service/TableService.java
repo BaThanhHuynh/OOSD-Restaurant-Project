@@ -1,13 +1,13 @@
 package com.restaurant.service;
 
-import java.util.List;
-import java.util.Optional;
-
+import com.restaurant.model.entity.Table;
+import com.restaurant.model.enums.TableStatus;
+import com.restaurant.repository.TableRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.restaurant.model.entity.Table;
-import com.restaurant.repository.TableRepository;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 public class TableService {
@@ -27,12 +27,16 @@ public class TableService {
         return tableRepository.findById(id);
     }
 
+    // [SỬA LỖI] Dùng Enum TableStatus.AVAILABLE thay vì chuỗi "available"
     public Table saveTable(Table table) {
-        if (table.getStatus() == null) table.setStatus("available");
+        if (table.getStatus() == null) {
+            table.setStatus(TableStatus.AVAILABLE);
+        }
         return tableRepository.save(table);
     }
 
-    public Table updateStatus(int id, String newStatus) {
+    // [SỬA LỖI] Tham số nhận vào là Enum
+    public Table updateStatus(int id, TableStatus newStatus) {
         return tableRepository.findById(id).map(table -> {
             table.setStatus(newStatus);
             return tableRepository.save(table);
@@ -43,13 +47,13 @@ public class TableService {
         if(tableRepository.existsById(id)) tableRepository.deleteById(id);
     }
 
-    // --- [QUAN TRỌNG] HÀM CÒN THIẾU GÂY LỖI ---
+    // [QUAN TRỌNG] Hàm Checkout được PaymentService gọi
     public void checkoutTable(int tableId) {
-        // Tìm bàn và reset trạng thái về "available"
         Optional<Table> tableOpt = tableRepository.findById(tableId);
         if (tableOpt.isPresent()) {
             Table table = tableOpt.get();
-            table.setStatus("available");
+            // [SỬA LỖI] Reset về Enum AVAILABLE
+            table.setStatus(TableStatus.AVAILABLE); 
             tableRepository.save(table);
         }
     }

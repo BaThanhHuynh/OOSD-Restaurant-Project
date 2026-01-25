@@ -8,5 +8,6 @@ package com.restaurant.model.enums;
 public enum OrderStatus {
     NEW,
     IN_PROGRESS,
-    COMPLETED
+    COMPLETED,
+    PAID
 }

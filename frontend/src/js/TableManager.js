@@ -1,6 +1,5 @@
 /**
- * TABLE MANAGER LOGIC (FINAL MERGED VERSION)
- * Features: Vertical Modal, QR Code Payment, Auto-Clear Cart Fix
+ * TABLE MANAGER LOGIC (FIXED ENUM CASE)
  * File: frontend/src/js/TableManager.js
  */
 
@@ -31,7 +30,7 @@ const tableManager = {
         }
     },
 
-    // 2. Render giao diện bàn
+    // 2. Render giao diện bàn (ĐÃ SỬA LỖI HIỂN THỊ)
     renderTables: function() {
         const container = document.querySelector('.table-grid-container');
         if (!container) return;
@@ -42,10 +41,17 @@ const tableManager = {
         }
 
         container.innerHTML = this.tables.map(table => {
-            let statusClass = table.status === 'occupied' ? 'occupied' : 'available';
-            let statusText = table.status === 'occupied' ? 'Đang phục vụ' : 'Bàn trống';
-            // Click action
-            let clickEvent = table.status === 'occupied' 
+            // [FIX LỖI QUAN TRỌNG TẠI ĐÂY]
+            // Backend trả về "OCCUPIED" (hoa), code cũ so sánh "occupied" (thường) -> Sai
+            // Giải pháp: Chuyển hết về chữ HOA để so sánh
+            const statusRaw = table.status ? table.status.toUpperCase() : 'AVAILABLE';
+            const isOccupied = (statusRaw === 'OCCUPIED');
+
+            let statusClass = isOccupied ? 'occupied' : 'available';
+            let statusText = isOccupied ? 'Đang phục vụ' : 'Bàn trống';
+            
+            // Click action: Nếu có khách -> Xem chi tiết; Nếu trống -> Mở bàn
+            let clickEvent = isOccupied 
                 ? `tableManager.openDetailModal(${table.id}, '${table.name}')`
                 : `tableManager.openGuestModal(${table.id}, '${table.name}')`;
 
@@ -80,14 +86,46 @@ const tableManager = {
         const guests = document.getElementById('guest-count-input').value;
         if (guests < 1) { alert("Số lượng khách không hợp lệ"); return; }
 
+        const tableId = this.currentTableId;
+        const tableName = this.currentTableName;
+
         try {
-            const res = await fetch(`${API_TABLES}/${this.currentTableId}/status?status=occupied`, { method: 'PUT' });
+            // Gọi API mở bàn. Backend Controller sẽ tự convert "occupied" -> Enum OCCUPIED
+            const res = await fetch(`${API_TABLES}/${tableId}/status?status=occupied`, { method: 'PUT' });
+            
             if (res.ok) {
                 this.closeGuestModal();
-                await this.loadTables();
-                this.openDetailModal(this.currentTableId, this.currentTableName);
-            } else { alert("Lỗi mở bàn!"); }
-        } catch (e) { console.error(e); alert("Lỗi kết nối!"); }
+                
+                // Load lại danh sách để cập nhật màu đỏ
+                await this.loadTables(); 
+                
+                // Mở ngay modal chi tiết để gọi món
+                this.openDetailModal(tableId, tableName);
+
+            } else { 
+                alert("Lỗi mở bàn!"); 
+            }
+        } catch (e) { 
+            console.error(e); 
+            alert("Lỗi kết nối!"); 
+        }
+    },
+
+    goToPosPage: function(id, name) {
+        if (!id) {
+            alert("⚠️ Lỗi: Không xác định được bàn! Vui lòng thử lại.");
+            return;
+        }
+
+        localStorage.setItem('activeTableId', id);
+        localStorage.setItem('activeTableName', name);
+        localStorage.setItem('activeTableNumber', name.replace('Bàn ', ''));
+        localStorage.setItem('isViewOnly', 'false');
+
+        if (window.app) {
+            app.loadPage('pos-page', 'nav-pos');
+            if(window.menuApp) window.menuApp.updateHeaderTableInfo();
+        }
     },
 
     // ============================================================
@@ -126,11 +164,14 @@ const tableManager = {
         }
 
         // Gán sự kiện nút
-        document.getElementById('btn-detail-order').onclick = () => {
+        const btnOrder = document.getElementById('btn-detail-order');
+        if(btnOrder) btnOrder.onclick = () => {
             this.closeDetailModal();
             this.goToPosPage(tableId, tableName);
         };
-        document.getElementById('btn-detail-pay').onclick = () => {
+        
+        const btnPay = document.getElementById('btn-detail-pay');
+        if(btnPay) btnPay.onclick = () => {
             this.closeDetailModal();
             this.openPaymentModal(tableId, tableName);
         };
@@ -149,13 +190,22 @@ const tableManager = {
         }
 
         const html = order.orderItems.map(item => {
-            const itemTotal = item.menuItem.price * item.quantity;
-            const timeStr = new Date().toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'});
+            const itemName = item.menuItem ? item.menuItem.name : 'Món đã xóa';
+            const itemPrice = item.menuItem ? item.menuItem.price : 0;
+            const itemTotal = itemPrice * item.quantity;
+            
+            // Hiển thị trạng thái món ăn (nếu có)
+            let statusBadge = '';
+            // Kiểm tra dishStatus từ backend (có thể là status hoặc dishStatus tùy version code)
+            const dStatus = item.dishStatus || item.status; 
+            if(dStatus === 'COOKING') statusBadge = '<br><span style="color:orange; font-size:11px;">(Đang nấu)</span>';
+            if(dStatus === 'READY') statusBadge = '<br><span style="color:green; font-size:11px;">(Đã xong)</span>';
+            if(dStatus === 'SERVED') statusBadge = '<br><span style="color:#888; font-size:11px;">(Đã phục vụ)</span>';
+
             return `
                 <tr>
-                    <td><b>${item.menuItem.name}</b><br><small style="color:#64748b">${fmt.format(item.menuItem.price)}</small></td>
+                    <td><b>${itemName}</b>${statusBadge}<br><small style="color:#64748b">${fmt.format(itemPrice)}</small></td>
                     <td style="text-align: center;">x${item.quantity}</td>
-                    <td style="text-align: center; color:#666;">${timeStr}</td>
                     <td style="text-align: right; font-weight:bold;">${fmt.format(itemTotal)}</td>
                 </tr>
             `;
@@ -165,24 +215,14 @@ const tableManager = {
         if(totalElement) totalElement.innerText = fmt.format(order.totalAmount || 0);
     },
 
-    goToPosPage: function(id, name) {
-        localStorage.setItem('activeTableId', id);
-        localStorage.setItem('activeTableName', name);
-        localStorage.setItem('isViewOnly', 'false');
-        if (window.app) {
-            app.loadPage('pos-page', 'nav-pos');
-            if(window.menuApp) window.menuApp.updateHeaderTableInfo();
-        }
-    },
-
     // ============================================================
-    // LOGIC 3: THANH TOÁN (VERTICAL + QR + RESET DATA FIX)
+    // LOGIC 3: THANH TOÁN
     // ============================================================
 
     openPaymentModal: async function(id, name) {
         this.currentTableId = id;
         
-        // 1. Reset dữ liệu cũ ngay lập tức để tránh hiện số tiền bàn trước
+        // Reset dữ liệu cũ
         this.currentOrderTotal = 0; 
         document.getElementById('modal-total-display').innerText = '...';
         const checkoutItems = document.getElementById('checkout-order-items');
@@ -193,7 +233,7 @@ const tableManager = {
             modal.style.display = 'flex';
             document.getElementById('modal-table-num').innerText = name.replace('Bàn ', '');
 
-            // 2. Fetch dữ liệu mới
+            // Fetch dữ liệu mới
             try {
                 const res = await fetch(`${API_ORDERS}/table/${id}/active`);
                 if (res.ok) {
@@ -208,11 +248,11 @@ const tableManager = {
                 if(checkoutItems) checkoutItems.innerHTML = '<tr><td colspan="3" style="text-align:center; color:red;">Lỗi tải dữ liệu</td></tr>';
             }
 
-            // 3. Cập nhật UI hiển thị tiền
+            // Cập nhật UI hiển thị tiền
             const fmt = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
             document.getElementById('modal-total-display').innerText = fmt.format(this.currentOrderTotal);
 
-            // 4. Mặc định chọn Tiền mặt
+            // Mặc định chọn Tiền mặt
             const cashBtn = document.querySelector('.pay-method[data-method="CASH"]');
             if(cashBtn) this.selectMethod(cashBtn);
         }
@@ -248,13 +288,11 @@ const tableManager = {
 
         const method = btn.getAttribute('data-method');
         const qrSection = document.getElementById('qr-payment-section');
-        // Chọn đúng container để scroll trong modal dọc
         const scrollContainer = document.getElementById('checkout-body'); 
 
         if (qrSection) {
             if (method === 'QR') {
                 qrSection.style.display = 'block';
-                // Auto scroll xuống
                 if(scrollContainer) {
                     setTimeout(() => {
                         scrollContainer.scrollTo({ top: scrollContainer.scrollHeight, behavior: 'smooth' });
@@ -266,7 +304,6 @@ const tableManager = {
         }
     },
 
-    // --- QUAN TRỌNG: HÀM THANH TOÁN KÈM LOGIC RESET DỮ LIỆU ---
     confirmCheckout: async function() {
         if (!this.currentTableId) return;
         
@@ -291,40 +328,24 @@ const tableManager = {
             if (res.ok) {
                 alert("✅ Thanh toán thành công!");
 
-                // ============================================================
-                // [FIX LỖI] CLEANUP DATA (Xóa dữ liệu cũ)
-                // ============================================================
-                
-                // 1. Xóa dữ liệu trong LocalStorage
+                // CLEANUP DATA
                 localStorage.removeItem('cart'); 
                 localStorage.removeItem('currentOrder');
                 localStorage.removeItem('activeTableId');
                 localStorage.removeItem('activeTableName');
 
-                // 2. Reset biến giỏ hàng trong bộ nhớ Javascript (menuApp)
                 if (window.menuApp && window.menuApp.state) {
-                    window.menuApp.state.cart = []; // Xóa mảng món ăn trong state
-                    
-                    // 3. Xóa giao diện danh sách món bên tab Menu (nếu DOM tồn tại)
+                    window.menuApp.state.cart = [];
                     const cartContainer = document.getElementById('cart-items');
                     if (cartContainer) {
-                        cartContainer.innerHTML = `
-                            <div class="empty-cart">
-                                <i class='bx bx-basket'></i>
-                                <p>Chưa có món nào</p>
-                            </div>`;
+                        cartContainer.innerHTML = `<div class="empty-cart"><i class='bx bx-basket'></i><p>Chưa có món nào</p></div>`;
                     }
-
-                    // 4. Reset các số tiền về 0đ
-                    const finalTotalElement = document.getElementById('final-total');
-                    const subTotalElement = document.getElementById('sub-total');
-                    const taxElement = document.getElementById('tax-amount');
-
-                    if (finalTotalElement) finalTotalElement.innerText = '0đ';
-                    if (subTotalElement) subTotalElement.innerText = '0đ';
-                    if (taxElement) taxElement.innerText = '0đ';
+                    const ids = ['final-total', 'sub-total', 'tax-amount'];
+                    ids.forEach(id => {
+                         const el = document.getElementById(id);
+                         if(el) el.innerText = '0đ';
+                    });
                 }
-                // ============================================================
 
                 this.closeModal();
                 await this.loadTables(); 

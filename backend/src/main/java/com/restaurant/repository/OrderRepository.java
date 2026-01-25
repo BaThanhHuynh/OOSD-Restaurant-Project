@@ -1,15 +1,16 @@
 package com.restaurant.repository;
 
-import com.restaurant.model.entity.Order;
-import com.restaurant.model.entity.Table;
-import com.restaurant.model.enums.OrderStatus;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
+import com.restaurant.model.entity.Order;
+import com.restaurant.model.entity.Table;
+import com.restaurant.model.enums.OrderStatus;
 
 /**
  * Repository để truy xuất dữ liệu Order
@@ -29,9 +30,11 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByTableId(@Param("tableId") int tableId);
 
     /**
-     * Tìm order đang active (chưa hoàn thành) của một bàn
+     * [FIX LỖI QUAN TRỌNG]
+     * Tìm order đang active của một bàn.
+     * Active nghĩa là CHƯA THANH TOÁN (PAID), còn COMPLETED (đã lên món xong) vẫn tính là active.
      */
-    @Query("SELECT o FROM Order o WHERE o.table.id = :tableId AND o.orderStatus != 'COMPLETED'")
+    @Query("SELECT o FROM Order o WHERE o.table.id = :tableId AND o.orderStatus != 'PAID'")
     Optional<Order> findActiveOrderByTableId(@Param("tableId") int tableId);
 
     /**

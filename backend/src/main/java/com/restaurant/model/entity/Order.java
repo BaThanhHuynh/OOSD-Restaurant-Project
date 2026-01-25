@@ -1,11 +1,23 @@
 package com.restaurant.model.entity;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-import com.restaurant.model.enums.OrderStatus;
-import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.restaurant.model.enums.OrderStatus;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 
 /**
  * Entity đại diện cho một Order (Đơn hàng)
@@ -93,11 +105,16 @@ public class Order {
      * Cập nhật trạng thái order dựa trên trạng thái của các món
      */
     public void updateOrderStatus() {
+        // [QUAN TRỌNG] Nếu đơn đã thanh toán thì không cho update ngược lại nữa
+        if (this.orderStatus == OrderStatus.PAID) {
+            return;
+        }
+
         boolean allServed = orderItems.stream()
                 .allMatch(item -> item.getDishStatus().toString().equals("SERVED"));
         
         if (allServed && !orderItems.isEmpty()) {
-            this.orderStatus = OrderStatus.COMPLETED;
+            this.orderStatus = OrderStatus.COMPLETED; // Khách đã nhận đủ món (nhưng chưa tính tiền)
             this.completedTime = LocalDateTime.now();
         } else if (!orderItems.isEmpty()) {
             this.orderStatus = OrderStatus.IN_PROGRESS;

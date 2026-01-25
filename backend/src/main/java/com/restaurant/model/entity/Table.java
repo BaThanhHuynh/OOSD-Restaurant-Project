@@ -1,13 +1,17 @@
 package com.restaurant.model.entity;
 
+import com.restaurant.model.enums.TableStatus; // [QUAN TRỌNG] Import Enum
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
 @Entity
-@jakarta.persistence.Table(name = "restaurant_tables") // Tên bảng trong MySQL
+@jakarta.persistence.Table(name = "restaurant_tables")
 public class Table {
 
     @Id
@@ -17,15 +21,18 @@ public class Table {
     @Column(nullable = false)
     private String name;
 
+    // [SỬA LỖI] Thay String bằng TableStatus
+    @Enumerated(EnumType.STRING) 
     @Column(nullable = false)
-    private String status; // 'available', 'occupied', 'reserved'
+    private TableStatus status; 
 
     @Column(nullable = false)
     private int capacity;
 
     public Table() {}
 
-    public Table(int id, String name, String status, int capacity) {
+    // Constructor cập nhật theo Enum
+    public Table(int id, String name, TableStatus status, int capacity) {
         this.id = id;
         this.name = name;
         this.status = status;
@@ -39,8 +46,9 @@ public class Table {
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    // [QUAN TRỌNG] Getter/Setter phải dùng TableStatus
+    public TableStatus getStatus() { return status; }
+    public void setStatus(TableStatus status) { this.status = status; }
 
     public int getCapacity() { return capacity; }
     public void setCapacity(int capacity) { this.capacity = capacity; }

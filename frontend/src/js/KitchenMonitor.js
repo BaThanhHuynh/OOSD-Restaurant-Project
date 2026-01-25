@@ -1,5 +1,5 @@
 /**
- * KITCHEN MONITOR (MÀN HÌNH BẾP - FIXED)
+ * KITCHEN MONITOR (MÀN HÌNH BẾP - FIX KHỚP DATA)
  * File: frontend/src/js/KitchenMonitor.js
  */
 
@@ -15,7 +15,6 @@ const kitchenApp = {
     startPolling() {
         if (this.intervalId) clearInterval(this.intervalId);
         this.intervalId = setInterval(() => {
-            // Chỉ gọi API nếu đang ở trang bếp
             if(document.querySelector('.kitchen-board')) {
                 this.fetchData();
             }
@@ -24,6 +23,7 @@ const kitchenApp = {
 
     async fetchData() {
         try {
+            // Gọi API lấy danh sách đơn đang làm
             const res = await fetch(`${API_ORDERS}/in-progress`);
             if (!res.ok) return;
             const orders = await res.json();
@@ -40,16 +40,18 @@ const kitchenApp = {
             if (!order.orderItems) return;
 
             order.orderItems.forEach(item => {
-                if (['ORDERED', 'COOKING', 'READY'].includes(item.status)) {
+                // [SỬA LỖI Ở ĐÂY]: Dùng item.dishStatus thay vì item.status
+                const status = item.dishStatus; 
+
+                if (['ORDERED', 'COOKING', 'READY'].includes(status)) {
                     newItems.push({
-                        // [FIX LỖI QUAN TRỌNG TẠI ĐÂY]
-                        id: item.id,            // Lấy ID trực tiếp từ item
-                        orderId: order.id,      // Lấy ID trực tiếp từ order (không qua .order)
+                        id: item.orderItemId, // Lưu ý: Backend bạn đặt là orderItemId
+                        orderId: order.orderId, // Backend Order cũng dùng orderId
                         
                         tableName: order.table ? order.table.name : 'Mang về',
                         dishName: item.menuItem ? item.menuItem.name : 'Món ???',
                         qty: item.quantity,
-                        status: item.status,
+                        status: status, // Lưu lại trạng thái để render cột
                         startTime: new Date(order.orderTime).getTime()
                     });
                 }
@@ -81,19 +83,18 @@ const kitchenApp = {
             
             let badgeClass = 'status-badge';
             let badgeText = 'Chờ nấu';
-            let nextAction = '';
-
+            
+            // Logic hiển thị màu và chữ
             if (item.status === 'COOKING') {
                 badgeClass += ' cooking';
                 badgeText = 'Đang nấu';
-                nextAction = `onclick="kitchenApp.updateItemStatus(${item.orderId}, ${item.id})"`;
             } else if (item.status === 'READY') {
                 badgeClass += ' ready';
                 badgeText = 'Sẵn sàng';
-                nextAction = `onclick="kitchenApp.updateItemStatus(${item.orderId}, ${item.id})"`;
-            } else {
-                nextAction = `onclick="kitchenApp.updateItemStatus(${item.orderId}, ${item.id})"`;
             }
+
+            // Sự kiện bấm để chuyển trạng thái
+            const nextAction = `onclick="kitchenApp.updateItemStatus(${item.orderId}, ${item.id})"`;
 
             return `
             <div class="ticket" id="ticket-${item.id}" ${nextAction} style="cursor:pointer;" title="Chạm để chuyển trạng thái">
@@ -116,11 +117,12 @@ const kitchenApp = {
 
     async updateItemStatus(orderId, orderItemId) {
         try {
+            // Gọi API chuyển trạng thái (State Pattern)
             const res = await fetch(`${API_ORDERS}/${orderId}/items/${orderItemId}/next-state`, {
                 method: 'PUT'
             });
             if (res.ok) {
-                this.fetchData();
+                this.fetchData(); // Load lại ngay sau khi bấm
             } else {
                 console.error("Lỗi cập nhật trạng thái");
             }
