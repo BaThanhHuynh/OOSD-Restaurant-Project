@@ -22,6 +22,58 @@ const menuManager = {
         }
     },
 
+    renderAdminMenu: async function() {
+    const container = document.querySelector('.menu-admin-grid');
+    if (!container) return;
+
+    try {
+        // Loading state đẹp hơn
+        container.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding:40px; color:#64748b;"><i class='bx bx-loader-alt bx-spin' style="font-size:24px;"></i><br>Đang tải thực đơn...</div>`;
+
+        const response = await fetch(API_MENU);
+        if (!response.ok) throw new Error("HTTP Error");
+
+        const items = await response.json();
+
+        if (!Array.isArray(items) || items.length === 0) {
+            container.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding:40px; color:#64748b; background:#f8fafc; border-radius:12px;"><i class='bx bx-food-menu' style="font-size:40px; margin-bottom:10px;"></i><p>Chưa có món nào. Hãy thêm món mới!</p></div>`;
+            return;
+        }
+
+        const defaultImg = 'src/assets/plus.jpg'; 
+        
+        // Render HTML sử dụng CSS Class chuẩn (admin-menu-card)
+        container.innerHTML = items.map(item => {
+            const displayImage = (item.imageUrl && item.imageUrl.trim() !== '') ? item.imageUrl : defaultImg;
+
+            return `
+            <div class="admin-menu-card">
+                <div class="card-img-wrapper">
+                    <img src="${displayImage}" alt="${item.name}" 
+                         onerror="this.src='${defaultImg}'">
+                </div>
+                
+                <div class="card-info">
+                    <h4>${item.name}</h4>
+                    <div class="card-meta">
+                        <span class="price-tag">${this.formatMoney(item.price)}</span>
+                        <span class="cat-tag tag-${item.categoryId}">${item.categoryId}</span>
+                    </div>
+                </div>
+
+                <button class="btn-delete-item" onclick="menuManager.deleteItem(${item.id})" title="Xóa món">
+                    <i class='bx bxs-trash'></i>
+                </button>
+            </div>
+        `}).join('');
+
+    } catch (error) {
+        console.error(error);
+        container.innerHTML = `<p style="color:red; text-align:center; grid-column: 1/-1;">⚠️ Lỗi tải dữ liệu!</p>`;
+    }
+},
+
+    
     openAddModal: function() {
         const setVal = (id, val) => {
             const el = document.getElementById(id);
@@ -131,7 +183,7 @@ renderAdminMenu: async function() {
 
             // ĐƯỜNG DẪN ẢNH MẶC ĐỊNH (Sửa lại đường dẫn này cho đúng với dự án của bạn)
             // Nếu bạn chạy file index.html từ thư mục gốc, thường sẽ là './assets/...' hoặc 'assets/...'
-            const defaultImg = 'src/assets/Nha_hang.jpg'; 
+            const defaultImg = 'src/assets/plus.jpg'; 
             
             // Link ảnh online dự phòng trường hợp ảnh local cũng lỗi
             const fallbackOnline = 'https://placehold.co/100?text=No+Image';

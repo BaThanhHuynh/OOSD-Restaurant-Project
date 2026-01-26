@@ -9,42 +9,38 @@
     <link rel="stylesheet" href="src/css/login.css">
     <style>
         body {
-            height: 100vh;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative; /* Quan trọng để định vị lớp nền */
-            overflow: hidden;   /* Cắt bỏ phần rìa bị nhoè của ảnh */
+            height: 100vh; margin: 0; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;
         }
-
-        /* Lớp giả chứa hình nền và hiệu ứng mờ */
         body::before {
-            content: "";
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            
-            /* Ảnh nền bạn chọn */
-            background: url('src/assets/Nha_hang.jpg') no-repeat center center;
-            background-size: cover;
-            
-            /* Hiệu ứng mờ */
-            filter: blur(5px); /* Tăng giảm số px để chỉnh độ mờ */
-            
-            /* Đẩy lùi ra sau nội dung chính */
-            z-index: -2; 
-            
-            /* Phóng to nhẹ (110%) để che đi các cạnh bị mờ trắng */
-            transform: scale(1.1); 
+            content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: url('src/assets/Nha_hang.jpg') no-repeat center center; background-size: cover;
+            filter: blur(5px); z-index: -2; transform: scale(1.1);
         }
-
-        /* (Tùy chọn) Lớp phủ tối để làm nổi bật form đăng nhập */
         body::after {
-            content: "";
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.3); /* Màu đen mờ 30% */
-            z-index: -1; /* Nằm trên ảnh nền nhưng dưới form */
+            content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.3); z-index: -1;
+        }
+        
+        .role-select {
+            width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;
+            outline: none; font-size: 14px; background: #f8fafc; color: #334155;
+            font-family: 'Poppins', sans-serif; transition: 0.3s; cursor: pointer;
+        }
+        .role-select:focus { border-color: #187a42; background: white; }
+
+        .email-joined-input {
+            display: flex; align-items: center; border: 1px solid #ddd; border-radius: 8px;
+            background: white; overflow: hidden; transition: 0.3s;
+        }
+        .email-joined-input:focus-within {
+            border-color: #187a42; box-shadow: 0 0 0 3px rgba(24, 122, 66, 0.1);
+        }
+        .email-joined-input input {
+            flex: 1; border: none; outline: none; padding: 12px; font-size: 14px; color: #333;
+        }
+        .email-suffix {
+            background: #e2e8f0; color: #64748b; padding: 12px 15px; font-size: 13px;
+            font-weight: 600; border-left: 1px solid #ddd; white-space: nowrap; user-select: none;
         }
     </style>
 </head>
@@ -54,26 +50,15 @@
             <form id="login-form" class="auth-form active">
                 <div class="header">
                     <div class="logo-icon"><i class='bx bxs-bowl-hot'></i></div>
-                    <h2>Chào mừng trở lại!</h2>
-                    <p>Đăng nhập để quản lý nhà hàng</p>
+                    <h2>Hệ Thống POS</h2>
+                    <p>Vui lòng đăng nhập để tiếp tục</p>
                 </div>
                 
                 <div class="input-group">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                        <label style="margin-bottom: 0;">Tên đăng nhập</label>
-                        
-                        <select id="quick-role-select" onchange="auth.quickLogin(this.value)" 
-                                style="border: none; background: transparent; color: #187a42; font-size: 12px; font-weight: 600; cursor: pointer; outline: none;">
-                            <option value="">&#8226;&#8226;&#8226; Chọn vai trò &#8226;&#8226;&#8226;</option>
-                            <option value="admin">Quản lý (Admin)</option>
-                            <option value="thungan">Thu ngân</option>
-                            <option value="nhanvien">Nhân viên Order</option>
-                        </select>
-                    </div>
-
+                    <label>Tên đăng nhập / Email</label>
                     <div class="input-field">
                         <i class='bx bx-user'></i>
-                        <input type="text" id="login-username" placeholder="Chọn vai trò ở trên hoặc nhập..." required>
+                        <input type="text" id="login-username" placeholder="Nhập username hoặc email..." required>
                     </div>
                 </div>
 
@@ -100,25 +85,37 @@
 
             <form id="register-form" class="auth-form">
                 <div class="header">
-                    <h2>Tạo tài khoản mới</h2>
-                    <p>Điền thông tin để đăng ký hệ thống</p>
+                    <h2>Đăng Ký Mới</h2>
+                    <p>Tạo tài khoản quản lý nhà hàng</p>
                 </div>
+                
                 <div class="input-group">
-                    <label>Họ và tên</label>
-                    <div class="input-field"><i class='bx bx-id-card'></i><input type="text" id="reg-fullname" placeholder="Nguyễn Văn A" required></div>
+                    <label>Tên đăng nhập (Username)</label>
+                    <div class="input-field"><i class='bx bx-user'></i><input type="text" id="reg-username" placeholder="Viết liền không dấu" required></div>
                 </div>
+
                 <div class="input-group">
-                    <label>Tên đăng nhập</label>
-                    <div class="input-field"><i class='bx bx-user'></i><input type="text" id="reg-username" placeholder="Nhập username" required></div>
+                    <label>Vai trò</label>
+                    <select id="reg-role" class="role-select" required onchange="auth.updateEmailSuffix()">
+                        <option value="staff" selected>Nhân viên (Staff)</option>
+                        <option value="cashier">Thu ngân (Cashier)</option>
+                        <option value="admin">Quản lý (Admin)</option>
+                    </select>
                 </div>
+
+                <div class="input-group">
+                    <label>Email đăng nhập (Tự động)</label>
+                    <div class="email-joined-input">
+                        <input type="text" id="reg-email-prefix" placeholder="ten_nguoi_dung" required>
+                        <span id="reg-email-suffix" class="email-suffix">_staff@gmail.com</span>
+                    </div>
+                </div>
+
                 <div class="input-group">
                     <label>Mật khẩu</label>
                     <div class="input-field"><i class='bx bx-lock-alt'></i><input type="password" id="reg-password" placeholder="••••••" required></div>
                 </div>
-                <div class="input-group">
-                    <label>Xác nhận mật khẩu</label>
-                    <div class="input-field"><i class='bx bx-check-shield'></i><input type="password" id="reg-confirm" placeholder="••••••" required></div>
-                </div>
+
                 <button type="submit" class="btn-submit">Đăng ký</button>
                 <div class="switch-form">Đã có tài khoản? <a href="#" onclick="auth.switchMode('login')">Đăng nhập</a></div>
             </form>
@@ -127,23 +124,23 @@
         <div class="decoration-side">
             <div class="intro-overlay">
                 <h1>4TL RES POS</h1>
-                <p>Hệ thống quản lý nhà hàng chuyên nghiệp.</p>
+                <p>Giải pháp quản lý nhà hàng toàn diện.</p>
             </div>
-
             <div class="slider-wrapper">
                 <img src="src/assets/Pho.jpg" class="slide active">
                 <img src="src/assets/Bun_bo.jpg" class="slide">
                 <img src="src/assets/Bun_cha_HN.jpg" class="slide">
                 <img src="src/assets/Com_tam.jpg" class="slide">
                 <img src="src/assets/Ga_nuong.jpg" class="slide">
-
-            <button class="nav-btn prev" onclick="slider.prev()"><i class='bx bx-chevron-left'></i></button>
-            <button class="nav-btn next" onclick="slider.next()"><i class='bx bx-chevron-right'></i></button>
-            
-            <div class="dots-container">
-                <span class="dot active" onclick="slider.goTo(0)"></span>
-                <span class="dot" onclick="slider.goTo(1)"></span>
-                <span class="dot" onclick="slider.goTo(2)"></span>
+                <button class="nav-btn prev" onclick="slider.prev()"><i class='bx bx-chevron-left'></i></button>
+                <button class="nav-btn next" onclick="slider.next()"><i class='bx bx-chevron-right'></i></button>
+                <div class="dots-container">
+                    <span class="dot active" onclick="slider.goTo(0)"></span>
+                    <span class="dot" onclick="slider.goTo(1)"></span>
+                    <span class="dot" onclick="slider.goTo(2)"></span>
+                    <span class="dot" onclick="slider.goTo(3)"></span>
+                    <span class="dot" onclick="slider.goTo(4)"></span>
+                </div>
             </div>
         </div>
     </div>
@@ -155,33 +152,20 @@
             currentIndex: 0,
             slides: document.querySelectorAll('.slide'),
             dots: document.querySelectorAll('.dot'),
-            
             show: function(index) {
-                // Xử lý vòng lặp index
                 if (index >= this.slides.length) index = 0;
                 if (index < 0) index = this.slides.length - 1;
-                
                 this.currentIndex = index;
-
-                // Ẩn tất cả, hiện slide hiện tại
                 this.slides.forEach(s => s.classList.remove('active'));
                 this.dots.forEach(d => d.classList.remove('active'));
-                
                 this.slides[this.currentIndex].classList.add('active');
                 this.dots[this.currentIndex].classList.add('active');
             },
-
             next: function() { this.show(this.currentIndex + 1); },
             prev: function() { this.show(this.currentIndex - 1); },
             goTo: function(index) { this.show(index); },
-
-            // Tự động chuyển sau 5 giây
-            autoPlay: function() {
-                setInterval(() => this.next(), 5000);
-            }
+            autoPlay: function() { setInterval(() => this.next(), 5000); }
         };
-
-        // Bắt đầu autoplay
         slider.autoPlay();
     </script>
 </body>

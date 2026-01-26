@@ -77,9 +77,6 @@ const settingsApp = {
                 </button>
             </div>
         ` : `
-            <div class="settings-footer" style="text-align:center; color:#94a3b8; font-style:italic; margin-top:20px;">
-                * Chỉ tài khoản Quản lý (Admin) mới có quyền chỉnh sửa.
-            </div>
         `;
 
         // --- VẼ HTML VÀO CONTAINER ---

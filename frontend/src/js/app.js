@@ -11,56 +11,82 @@ const app = {
 
         // Mặc định load trang Quản lý bàn khi vào app
         this.loadPage('tables-page', 'nav-tables');
+
+        // --- SỰ KIỆN GLOBAL: Click ra ngoài thì đóng User Menu ---
+        document.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('user-dropdown-menu');
+            const profile = document.querySelector('.user-profile');
+            
+            // Nếu menu đang mở và click không nằm trong menu hoặc nút profile
+            if (dropdown && dropdown.classList.contains('show')) {
+                if (!dropdown.contains(e.target) && !profile.contains(e.target)) {
+                    dropdown.classList.remove('show');
+                    if (profile) profile.classList.remove('active');
+                }
+            }
+        });
     },
 
     // 2. Kiểm tra quyền & Hiển thị Menu Sidebar
-    checkAuth: function() {
-        const userToken = localStorage.getItem('user_token');
-        if (!userToken) {
-            window.location.href = 'Login.html';
-            return false;
-        }
+checkAuth: function() {
+    const userToken = localStorage.getItem('user_token');
+    if (!userToken) {
+        window.location.href = 'Login.html';
+        return false;
+    }
 
-        let user;
-        try {
-            user = JSON.parse(userToken);
-        } catch (e) {
-            console.error("Lỗi token user:", e);
-            localStorage.removeItem('user_token');
-            window.location.href = 'Login.html';
-            return false;
-        }
+    let user;
+    try {
+        user = JSON.parse(userToken);
+    } catch (e) {
+        localStorage.removeItem('user_token');
+        window.location.href = 'Login.html';
+        return false;
+    }
+    
+    // --- 1. XỬ LÝ GIAO DIỆN USER ---
+    const userNameEl = document.getElementById('user-name');
+    const userRoleEl = document.getElementById('user-role');
+    const userAvatarEl = document.getElementById('user-avatar');
+    
+    // Mapping tên vai trò hiển thị
+    const roleMapping = {
+        'admin': 'Quản lý',
+        'cashier': 'Thu ngân',
+        'staff': 'Nhân viên'
+    };
+    
+    if(userNameEl) userNameEl.textContent = user.name || user.username;
+    if(userRoleEl) userRoleEl.textContent = roleMapping[user.role] || user.role;
+    if(userAvatarEl) userAvatarEl.textContent = (user.name || "U").charAt(0).toUpperCase();
+
+    // --- 2. PHÂN QUYỀN (QUAN TRỌNG NHẤT) ---
+    // Xóa hết các class role cũ (nếu có) để tránh lỗi khi switch tài khoản
+    document.body.classList.remove('role-admin', 'role-cashier', 'role-staff');
+    
+    // Thêm class role hiện tại vào body
+    // Ví dụ: <body class="role-admin"> hoặc <body class="role-staff">
+    if (user.role) {
+        document.body.classList.add(`role-${user.role}`);
+    }
+
+    return true; 
+},
+    // 3. Hàm mới: Bật tắt menu User khi click vào tên
+    toggleUserMenu: function(event) {
+        // Ngăn chặn sự kiện click lan ra document (tránh bị đóng ngay lập tức)
+        if(event) event.stopPropagation();
+
+        const dropdown = document.getElementById('user-dropdown-menu');
+        const profile = document.querySelector('.user-profile');
         
-        // Hiển thị thông tin User lên Sidebar
-        const userNameEl = document.querySelector('.user-info h4');
-        const userRoleEl = document.querySelector('.user-info span');
-        
-        if(userNameEl) userNameEl.textContent = user.name || user.username;
-        if(userRoleEl) {
-            const roleName = user.role === 'admin' ? 'Quản lý' : (user.role === 'cashier' ? 'Thu Ngân' : 'Nhân Viên');
-            userRoleEl.textContent = roleName;
+        if (dropdown && profile) {
+            dropdown.classList.toggle('show');
+            profile.classList.toggle('active');
         }
-
-        // --- XỬ LÝ ẨN/HIỆN MENU THEO QUYỀN ---
-        const navAdmin = document.getElementById('nav-admin');       
-        const navSettings = document.getElementById('nav-settings'); 
-        const navKitchen = document.getElementById('nav-kitchen');   
-
-        // Mặc định hiện tất cả
-        if(navAdmin) navAdmin.style.display = 'flex';
-        if(navSettings) navSettings.style.display = 'flex';
-        if(navKitchen) navKitchen.style.display = 'flex';
-
-        // Logic phân quyền:
-        if (user.role === 'staff') {
-            // Nhân viên: Ẩn trang Admin Menu
-            if(navAdmin) navAdmin.style.display = 'none'; 
-        } 
-        
-        return true; // Xác thực thành công
     },
 
-    // 3. Chuyển Tab
+    // 4. Chuyển Tab
     loadPage: function(pageId, navId) {
         // A. Active menu bên trái
         document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
@@ -76,7 +102,6 @@ const app = {
         // C. Hiện trang đích
         const targetPage = document.getElementById(pageId);
         if(targetPage) {
-            // [SỬA LỖI]: Luôn dùng flex để giữ bố cục full chiều cao như CSS đã định nghĩa
             targetPage.style.display = 'flex'; 
             setTimeout(() => targetPage.classList.add('active'), 10);
         }
@@ -85,13 +110,9 @@ const app = {
         const orderPanel = document.getElementById('main-order-panel');
         if (orderPanel) {
             if (pageId === 'pos-page') {
-                // Vào trang Menu -> Hiện Order Panel
                 orderPanel.style.display = 'flex';
-                
-                // Render lại Menu để đảm bảo dữ liệu mới nhất
                 if(window.menuApp) window.menuApp.init(); 
             } else {
-                // Các trang khác -> Ẩn Order Panel
                 orderPanel.style.display = 'none';
             }
         }
