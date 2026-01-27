@@ -9,6 +9,10 @@ const app = {
         // Nếu chưa đăng nhập thì dừng lại ngay
         if (!this.checkAuth()) return;
 
+        if (window.settingsApp) {
+            window.settingsApp.init(); 
+        }
+
         // Mặc định load trang Quản lý bàn khi vào app
         this.loadPage('tables-page', 'nav-tables');
 

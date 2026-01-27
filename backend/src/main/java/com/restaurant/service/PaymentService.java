@@ -13,47 +13,34 @@ import com.restaurant.repository.OrderRepository;
 import com.restaurant.repository.PaymentRepository;
 
 @Service
-@Transactional // Quan trọng: Giúp rollback toàn bộ nếu có lỗi
+@Transactional
 public class PaymentService {
     
-    private final PaymentRepository paymentRepository;
-    private final OrderRepository orderRepository;
-    private final TableService tableService;
+    @Autowired private PaymentRepository paymentRepository;
+    @Autowired private OrderRepository orderRepository;
+    @Autowired private TableService tableService;
 
-    @Autowired
-    public PaymentService(PaymentRepository paymentRepository, 
-                          OrderRepository orderRepository, 
-                          TableService tableService) {
-        this.paymentRepository = paymentRepository;
-        this.orderRepository = orderRepository;
-        this.tableService = tableService;
-    }
+    public void processPayment(int tableId, double amount, String method) {
+        // 1. Tìm đơn hàng đang ăn (Active Order) của bàn này
+        Order order = orderRepository.findActiveOrderByTableId(tableId)
+                .orElseThrow(() -> new RuntimeException("Bàn này chưa có đơn hàng nào!"));
 
-    public void processPayment(Payment payment) {
-        // 1. Tìm đơn hàng đang hoạt động của bàn
-        // (Repository đã được sửa để tìm cả trạng thái COMPLETED)
-        Order order = orderRepository.findActiveOrderByTableId(payment.getTableId())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng để thanh toán!"));
-
-        // 2. Cập nhật trạng thái đơn hàng (Đồng bộ cả 2 cột)
+        // 2. Tạo Payment và GẮN ĐƠN HÀNG VÀO (Bước quan trọng nhất)
+        Payment payment = new Payment();
+        payment.setOrder(order);           // <-- Đây là dòng giúp lưu order_id vào DB
+        payment.setAmount(amount);
+        payment.setMethod(method);
+        payment.setPaymentTime(LocalDateTime.now());
         
-        // a. Cập nhật cột order_status (Logic quy trình mới)
+        // 3. Lưu xuống bảng payments
+        paymentRepository.save(payment);
+
+        // 4. Đánh dấu đơn hàng là Đã thanh toán (để không hiện lại nữa)
         order.setOrderStatus(OrderStatus.PAID);
-        
-        // b. [QUAN TRỌNG] Cập nhật cột payment_status (Logic DB cũ)
-        // Để tránh cột này bị NULL hoặc vẫn là 'unpaid'
-        order.setPaymentStatus("paid"); 
-
+        order.setPaymentStatus("paid");
         orderRepository.save(order);
 
-        // 3. --- [LƯU VÀO BẢNG PAYMENTS] ---
-        payment.setPaymentTime(LocalDateTime.now());
-        payment.setAmount(order.getTotalAmount()); 
-        
-        // Lưu lịch sử thanh toán
-        paymentRepository.save(payment); 
-
-        // 4. --- [RESET BÀN VỀ TRỐNG] ---
-        tableService.checkoutTable(payment.getTableId());
+        // 5. Trả bàn về trạng thái Trống
+        tableService.checkoutTable(tableId);
     }
 }

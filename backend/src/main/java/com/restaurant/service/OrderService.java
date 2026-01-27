@@ -10,239 +10,170 @@ import org.springframework.transaction.annotation.Transactional;
 import com.restaurant.model.entity.MenuItem;
 import com.restaurant.model.entity.Order;
 import com.restaurant.model.entity.OrderItem;
+import com.restaurant.model.entity.Settings; // [MỚI]
 import com.restaurant.model.entity.Table;
 import com.restaurant.repository.MenuRepository;
 import com.restaurant.repository.OrderRepository;
 import com.restaurant.repository.TableRepository;
 
-/**
- * Service xử lý nghiệp vụ liên quan đến Order
- * Tuân thủ nguyên tắc OOSD: KHÔNG sử dụng if-else để xử lý trạng thái
- */
 @Service
 @Transactional
 public class OrderService {
 
-    @Autowired
-    private OrderRepository orderRepository;
+    @Autowired private OrderRepository orderRepository;
+    @Autowired private TableRepository tableRepository;
+    @Autowired private MenuRepository menuRepository;
 
-    @Autowired
-    private TableRepository tableRepository;
+    // [MỚI] Inject SettingsService để lấy % Thuế từ Database
+    @Autowired private SettingsService settingsService;
 
-    @Autowired
-    private MenuRepository menuRepository;
+    // ======= HÀM PHỤ TRỢ: TÍNH TIỀN & THUẾ TỰ ĐỘNG =======
+    private void recalculateTotal(Order order) {
+        // 1. Tính tổng tiền món ăn (Subtotal)
+        double subTotal = order.getOrderItems().stream()
+                .mapToDouble(item -> item.getUnitPrice() * item.getQuantity())
+                .sum();
+
+        // 2. Lấy % Thuế động từ Cài đặt (Thay vì cứng 5%)
+        Settings settings = settingsService.getSettings();
+        double taxRate = settings.getTaxRate() / 100.0; // VD: 10% -> 0.1
+
+        // 3. Tính toán
+        double taxAmount = subTotal * taxRate;
+        double totalAmount = subTotal + taxAmount;
+
+        // 4. Lưu vào Order (Bắt buộc file Order.java phải có setter này)
+        order.setTaxAmount(taxAmount);
+        order.setTotalAmount(totalAmount);
+    }
 
     // ======= NGHIỆP VỤ 1: TẠO ORDER THEO BÀN =======
-
-    /**
-     * Tạo order mới cho một bàn
-     * Nếu bàn đã có order active, trả về order đó
-     */
     public Order createOrderForTable(int tableId) {
-        // Tìm bàn
         Table table = tableRepository.findById(tableId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy bàn với ID: " + tableId));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy bàn: " + tableId));
 
-        // Kiểm tra xem bàn đã có order active chưa
-        Optional<Order> existingOrder = orderRepository.findActiveOrderByTableId(tableId);
-        
-        // Trả về order hiện tại hoặc tạo mới
-        return existingOrder.orElseGet(() -> {
+        return orderRepository.findActiveOrderByTableId(tableId).orElseGet(() -> {
             Order newOrder = new Order(table);
+            newOrder.setTotalAmount(0); // Khởi tạo 0 đồng
+            newOrder.setTaxAmount(0);
             return orderRepository.save(newOrder);
         });
     }
 
-    /**
-     * Lấy order active của một bàn
-     */
     public Optional<Order> getActiveOrderByTable(int tableId) {
         return orderRepository.findActiveOrderByTableId(tableId);
     }
 
-    // ======= NGHIỆP VỤ 2: THÊM MÓN VÀO ORDER =======
-
-    /**
-     * Thêm món vào order
-     */
+    // ======= NGHIỆP VỤ 2: THÊM MÓN (CÓ TÍNH LẠI TIỀN) =======
     public Order addItemToOrder(Long orderId, int menuItemId, int quantity) {
-        // Tìm order
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy order với ID: " + orderId));
+                .orElseThrow(() -> new RuntimeException("Order không tồn tại: " + orderId));
 
-        // Tìm menu item
         MenuItem menuItem = menuRepository.findById(menuItemId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy món với ID: " + menuItemId));
+                .orElseThrow(() -> new RuntimeException("Món không tồn tại: " + menuItemId));
 
-        // Tạo order item mới
         OrderItem orderItem = new OrderItem(menuItem, quantity);
-
-        // Thêm vào order
         order.addItem(orderItem);
         order.updateOrderStatus();
+        
+        // [QUAN TRỌNG] Tính lại tiền ngay sau khi thêm
+        recalculateTotal(order);
 
-        // Lưu và trả về
         return orderRepository.save(order);
     }
 
-    /**
-     * Thêm nhiều món cùng lúc
-     */
     public Order addMultipleItems(Long orderId, List<ItemRequest> itemRequests) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy order với ID: " + orderId));
+                .orElseThrow(() -> new RuntimeException("Order không tồn tại: " + orderId));
 
         itemRequests.forEach(request -> {
             MenuItem menuItem = menuRepository.findById(request.getMenuItemId())
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy món với ID: " + request.getMenuItemId()));
-            
+                    .orElseThrow(() -> new RuntimeException("Món không tồn tại: " + request.getMenuItemId()));
             OrderItem orderItem = new OrderItem(menuItem, request.getQuantity());
             order.addItem(orderItem);
         });
 
         order.updateOrderStatus();
+        
+        // [QUAN TRỌNG] Tính lại tiền
+        recalculateTotal(order);
+
         return orderRepository.save(order);
     }
 
-    // ======= NGHIỆP VỤ 3: CHUYỂN TRẠNG THÁI MÓN ĂN (STATE PATTERN - KHÔNG IF-ELSE) =======
-
-    /**
-     * Chuyển trạng thái của một món ăn sang trạng thái tiếp theo
-     * SỬ DỤNG STATE PATTERN - Không cần if-else
-     */
+    // ======= NGHIỆP VỤ 3: CHUYỂN TRẠNG THÁI (STATE PATTERN) =======
+    // (Giữ nguyên logic cũ, chỉ thêm việc lưu lại)
     public Order changeItemState(Long orderId, Long orderItemId) {
-        // Tìm order với items
         Order order = orderRepository.findByIdWithItems(orderId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy order với ID: " + orderId));
-
-        // Tìm order item
+                .orElseThrow(() -> new RuntimeException("Order không tồn tại"));
+        
         OrderItem orderItem = order.getOrderItems().stream()
                 .filter(item -> item.getOrderItemId().equals(orderItemId))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy món với ID: " + orderItemId));
+                .orElseThrow(() -> new RuntimeException("Món không tồn tại"));
 
-        // Chuyển trạng thái - State Pattern tự động xử lý, KHÔNG CẦN IF-ELSE
         orderItem.changeToNextState();
-
-        // Cập nhật trạng thái order
         order.updateOrderStatus();
-
-        // Lưu và trả về
         return orderRepository.save(order);
     }
 
-    /**
-     * Chuyển tất cả các món trong order sang trạng thái tiếp theo
-     */
     public Order changeAllItemsState(Long orderId) {
         Order order = orderRepository.findByIdWithItems(orderId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy order với ID: " + orderId));
+                .orElseThrow(() -> new RuntimeException("Order không tồn tại"));
 
-        // Chuyển trạng thái tất cả các món - State Pattern tự xử lý
         order.getOrderItems().forEach(OrderItem::changeToNextState);
-
-        // Cập nhật trạng thái order
         order.updateOrderStatus();
-
         return orderRepository.save(order);
     }
 
     // ======= CÁC NGHIỆP VỤ PHỤ TRỢ =======
+    public List<Order> getAllOrders() { return orderRepository.findAll(); }
+    public Optional<Order> getOrderById(Long orderId) { return orderRepository.findByIdWithItems(orderId); }
+    public List<Order> getOrdersByTable(int tableId) { return orderRepository.findByTableId(tableId); }
+    public List<Order> getInProgressOrders() { return orderRepository.findAllInProgressOrders(); }
 
-    /**
-     * Lấy tất cả orders
-     */
-    public List<Order> getAllOrders() {
-        return orderRepository.findAll();
-    }
-
-    /**
-     * Lấy order theo ID
-     */
-    public Optional<Order> getOrderById(Long orderId) {
-        return orderRepository.findByIdWithItems(orderId);
-    }
-
-    /**
-     * Lấy tất cả orders của một bàn
-     */
-    public List<Order> getOrdersByTable(int tableId) {
-        return orderRepository.findByTableId(tableId);
-    }
-
-    /**
-     * Lấy tất cả orders đang IN_PROGRESS
-     */
-    public List<Order> getInProgressOrders() {
-        return orderRepository.findAllInProgressOrders();
-    }
-
-    /**
-     * Hoàn thành order
-     */
     public Order completeOrder(Long orderId) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy order với ID: " + orderId));
-
+                .orElseThrow(() -> new RuntimeException("Order không tồn tại"));
+        
+        // Tính tiền lần cuối trước khi chốt
+        recalculateTotal(order);
+        
         order.completeOrder();
         return orderRepository.save(order);
     }
 
-    /**
-     * Xóa món khỏi order
-     */
     public Order removeItemFromOrder(Long orderId, Long orderItemId) {
         Order order = orderRepository.findByIdWithItems(orderId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy order với ID: " + orderId));
+                .orElseThrow(() -> new RuntimeException("Order không tồn tại"));
 
         OrderItem itemToRemove = order.getOrderItems().stream()
                 .filter(item -> item.getOrderItemId().equals(orderItemId))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy món với ID: " + orderItemId));
+                .orElseThrow(() -> new RuntimeException("Món không tồn tại trong Order"));
 
         order.removeItem(itemToRemove);
         order.updateOrderStatus();
 
+        // [QUAN TRỌNG] Tính lại tiền sau khi xóa món
+        recalculateTotal(order);
+
         return orderRepository.save(order);
     }
 
-    /**
-     * Xóa order
-     */
     public void deleteOrder(Long orderId) {
         orderRepository.deleteById(orderId);
     }
 
-    // ======= INNER CLASS ĐỂ NHẬN REQUEST =======
-
-    /**
-     * Class phụ để nhận request thêm món
-     */
+    // Inner Class (Giữ nguyên)
     public static class ItemRequest {
         private int menuItemId;
         private int quantity;
-
         public ItemRequest() {}
-
-        public ItemRequest(int menuItemId, int quantity) {
-            this.menuItemId = menuItemId;
-            this.quantity = quantity;
-        }
-
-        public int getMenuItemId() {
-            return menuItemId;
-        }
-
-        public void setMenuItemId(int menuItemId) {
-            this.menuItemId = menuItemId;
-        }
-
-        public int getQuantity() {
-            return quantity;
-        }
-
-        public void setQuantity(int quantity) {
-            this.quantity = quantity;
-        }
+        public ItemRequest(int menuItemId, int quantity) { this.menuItemId = menuItemId; this.quantity = quantity; }
+        public int getMenuItemId() { return menuItemId; }
+        public void setMenuItemId(int menuItemId) { this.menuItemId = menuItemId; }
+        public int getQuantity() { return quantity; }
+        public void setQuantity(int quantity) { this.quantity = quantity; }
     }
 }

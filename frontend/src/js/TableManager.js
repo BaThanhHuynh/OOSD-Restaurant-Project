@@ -178,9 +178,13 @@ const tableManager = {
         
         if (!order || !order.orderItems || order.orderItems.length === 0) {
             if(totalElement) totalElement.innerText = '0 ₫';
+            // Reset các dòng thuế nếu có
+            if(document.getElementById('detail-subtotal')) document.getElementById('detail-subtotal').innerText = '0 ₫';
+            if(document.getElementById('detail-tax')) document.getElementById('detail-tax').innerText = '0 ₫';
             return;
         }
 
+        // 1. Render danh sách món
         const html = order.orderItems.map(item => {
             const itemName = item.menuItem ? item.menuItem.name : 'Món đã xóa';
             const itemPrice = item.menuItem ? item.menuItem.price : 0;
@@ -202,7 +206,34 @@ const tableManager = {
         }).join('');
 
         if(container) container.innerHTML = html;
-        if(totalElement) totalElement.innerText = fmt.format(order.totalAmount || 0);
+
+        // 2. [LOGIC MỚI] Tính toán hiển thị Thuế & Subtotal động
+        // Tính tổng tiền hàng (chưa thuế)
+        const subTotal = order.orderItems.reduce((acc, item) => {
+            return acc + ((item.menuItem ? item.menuItem.price : 0) * item.quantity);
+        }, 0);
+
+        // Lấy thuế từ Settings (Nếu chưa load thì mặc định 0)
+        const taxRate = (window.settingsApp && window.settingsApp.config) 
+                        ? window.settingsApp.config.taxRate 
+                        : 0;
+        
+        // Tính tiền thuế
+        const taxAmount = subTotal * (taxRate / 100);
+        const finalTotal = subTotal + taxAmount;
+
+        // 3. Cập nhật UI (Cần có các ID tương ứng bên HTML Modal)
+        const elSub = document.getElementById('detail-subtotal');
+        if(elSub) elSub.innerText = fmt.format(subTotal);
+
+        const elTaxLabel = document.getElementById('detail-tax-label');
+        if(elTaxLabel) elTaxLabel.innerText = `Thuế VAT (${taxRate}%):`;
+
+        const elTaxVal = document.getElementById('detail-tax');
+        if(elTaxVal) elTaxVal.innerText = fmt.format(taxAmount);
+
+        // Cập nhật tổng
+        if(totalElement) totalElement.innerText = fmt.format(finalTotal);
     },
 
     // ============================================================
@@ -211,7 +242,7 @@ const tableManager = {
 
     openPaymentModal: async function(id, name) {
         this.currentTableId = id;
-        this.currentTableName = name; // Cập nhật tên bàn hiện tại
+        this.currentTableName = name;
         
         this.currentOrderTotal = 0; 
         document.getElementById('modal-total-display').innerText = '...';
@@ -227,18 +258,41 @@ const tableManager = {
                 const res = await fetch(`${API_ORDERS}/table/${id}/active`);
                 if (res.ok) {
                     const order = await res.json();
-                    this.currentOrderTotal = order.totalAmount || 0;
+                    
+                    // --- [LOGIC MỚI] Tính lại để hiển thị đúng % thuế hiện tại ---
+                    const subTotal = order.orderItems.reduce((acc, item) => acc + (item.menuItem.price * item.quantity), 0);
+                    const taxRate = (window.settingsApp && window.settingsApp.config) ? window.settingsApp.config.taxRate : 0;
+                    const taxAmount = subTotal * (taxRate / 100);
+                    const finalTotal = subTotal + taxAmount;
+                    
+                    this.currentOrderTotal = finalTotal; // Lưu số chính xác để thanh toán
+
+                    // Render danh sách
                     this.renderCheckoutList(order);
+
+                    // Cập nhật số liệu lên Modal Thanh Toán
+                    const fmt = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
+                    
+                    // (Bạn cần thêm các thẻ span có id này vào HTML Modal Thanh toán nếu muốn hiện chi tiết)
+                    if(document.getElementById('checkout-subtotal')) 
+                        document.getElementById('checkout-subtotal').innerText = fmt.format(subTotal);
+                    
+                    if(document.getElementById('checkout-tax-label')) 
+                        document.getElementById('checkout-tax-label').innerText = `Thuế (${taxRate}%):`;
+                    
+                    if(document.getElementById('checkout-tax')) 
+                        document.getElementById('checkout-tax').innerText = fmt.format(taxAmount);
+
+                    document.getElementById('modal-total-display').innerText = fmt.format(finalTotal);
+
                 } else {
                     if(checkoutItems) checkoutItems.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:15px;">Chưa có món để thanh toán</td></tr>';
+                    document.getElementById('modal-total-display').innerText = '0 ₫';
                 }
             } catch (e) {
                 console.error(e);
                 if(checkoutItems) checkoutItems.innerHTML = '<tr><td colspan="3" style="text-align:center; color:red;">Lỗi tải dữ liệu</td></tr>';
             }
-
-            const fmt = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
-            document.getElementById('modal-total-display').innerText = fmt.format(this.currentOrderTotal);
 
             const cashBtn = document.querySelector('.pay-method[data-method="CASH"]');
             if(cashBtn) this.selectMethod(cashBtn);
@@ -321,7 +375,7 @@ const tableManager = {
             });
 
             if (res.ok) {
-                alert("✅ Thanh toán thành công!");
+                alert(" Thanh toán thành công!");
 
                 // --- 1. CLEANUP STORAGE ---
                 localStorage.removeItem('cart'); 

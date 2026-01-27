@@ -261,15 +261,31 @@ const menuApp = {
 
     updateTotals: function () {
         const subTotal = this.state.cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
-        const tax = subTotal * 0.05;
+        
+        // 1. LẤY THUẾ TỪ CÀI ĐẶT (ĐỘNG)
+        // Nếu chưa load thì fallback về 0 (hoặc 10 tùy bạn)
+        const rate = (window.settingsApp && window.settingsApp.config) 
+                     ? window.settingsApp.config.taxRate 
+                     : 0;
+
+        // 2. TÍNH TOÁN
+        const tax = subTotal * (rate / 100);
         const total = subTotal + tax;
+
+        // 3. CẬP NHẬT UI
         const setVal = (id, val) => {
             const el = document.getElementById(id);
             if (el) el.textContent = this.formatMoney(val);
         };
+        
         setVal('sub-total', subTotal);
         setVal('tax-amount', tax);
         setVal('final-total', total);
+        
+        // Cập nhật nhãn thuế (Ví dụ: "Thuế (8%)")
+        // Bạn cần thêm id="tax-label" vào HTML nếu muốn hiển thị rõ số %
+        const taxLabel = document.getElementById('tax-label');
+        if (taxLabel) taxLabel.textContent = `Thuế (${rate}%)`;
     },
 
     submitOrder: async function () {

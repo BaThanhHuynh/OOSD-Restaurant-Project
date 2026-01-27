@@ -7,47 +7,40 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
 
 @Entity
 @jakarta.persistence.Table(name = "payments")
 public class Payment {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @Column(name = "table_id")
-    private int tableId; // Biến này cần có Getter bên dưới
+    // [QUAN TRỌNG] Liên kết với Order để biết thanh toán cho đơn nào
+    @OneToOne 
+    @JoinColumn(name = "order_id", referencedColumnName = "id")
+    private Order order;
 
-    @Column(name = "amount")
+    @Column(nullable = false)
     private double amount;
 
-    @Column(name = "payment_time")
+    @Column(name = "payment_time", nullable = false)
     private LocalDateTime paymentTime;
 
-    @Column(name = "method")
+    @Column(name = "payment_method", nullable = false)
     private String method;
 
+    // --- Constructors ---
     public Payment() {}
 
-    public Payment(int tableId, double amount, String method) {
-        this.tableId = tableId;
-        this.amount = amount;
-        this.method = method;
-        this.paymentTime = LocalDateTime.now();
-    }
-    
-    // --- KHU VỰC QUAN TRỌNG: CÁC HÀM GETTER & SETTER ---
-    // (Thiếu hàm này là PaymentService sẽ báo lỗi đỏ ngay)
-    public int getTableId() { 
-        return tableId; 
-    }
-    
-    public void setTableId(int tableId) { 
-        this.tableId = tableId; 
-    }
-
+    // --- Getters & Setters ---
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
+
+    public Order getOrder() { return order; }
+    public void setOrder(Order order) { this.order = order; }
 
     public double getAmount() { return amount; }
     public void setAmount(double amount) { this.amount = amount; }
@@ -57,4 +50,9 @@ public class Payment {
 
     public String getMethod() { return method; }
     public void setMethod(String method) { this.method = method; }
+    
+    // Helper để lấy Table ID từ Order (cho tiện)
+    public int getTableId() {
+        return order != null && order.getTable() != null ? order.getTable().getId() : 0;
+    }
 }
