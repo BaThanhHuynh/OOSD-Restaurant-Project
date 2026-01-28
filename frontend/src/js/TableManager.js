@@ -2,7 +2,7 @@
  * TABLE MANAGER LOGIC
  * File: frontend/src/js/TableManager.js
  * Mô tả: Quản lý trạng thái bàn, mở bàn, xem chi tiết và xử lý thanh toán.
- * Cập nhật: Fix lỗi thanh toán ảo & Phản hồi UI tức thì.
+ * Cập nhật: Hiển thị Ghi chú (Note), Fix lỗi thanh toán & Thêm cột Thời gian.
  */
 
 const tableManager = {
@@ -65,6 +65,13 @@ const tableManager = {
                 </div>
             `;
         }).join('');
+    },
+
+    // [MỚI] Hàm hỗ trợ format giờ (VD: 14:30)
+    formatTime: function(dateString) {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
     },
 
     // ============================================================
@@ -146,6 +153,7 @@ const tableManager = {
             if (res.ok) {
                 const order = await res.json();
                 this.renderDetailItems(order, listBody, totalSpan);
+                // Lưu ý: Ở view chi tiết này hiển thị tổng chưa thuế từ API
                 this.currentOrderTotal = order.totalAmount || 0;
             } else {
                 emptyMsg.style.display = 'block';
@@ -173,6 +181,7 @@ const tableManager = {
         document.getElementById('table-detail-modal').style.display = 'none';
     },
 
+    // --- [CẬP NHẬT] HIỂN THỊ GHI CHÚ & CỘT THỜI GIAN ---
     renderDetailItems: function(order, container, totalElement) {
         const fmt = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
         
@@ -192,11 +201,31 @@ const tableManager = {
             if(dStatus === 'READY') statusBadge = '<br><span style="color:green; font-size:11px;">(Đã xong)</span>';
             if(dStatus === 'SERVED') statusBadge = '<br><span style="color:#888; font-size:11px;">(Đã phục vụ)</span>';
 
+            // [MỚI] Render Note
+            const noteHtml = item.note 
+                ? `<div style="font-size:12px; color:#d63031; font-style:italic; margin-top:2px;">
+                     <i class='bx bx-note'></i> ${item.note}
+                   </div>` 
+                : '';
+            
+            // [MỚI] Render Thời gian (ưu tiên giờ gọi món, nếu không có thì lấy giờ mở bàn)
+            const itemTime = item.orderItemTime ? item.orderItemTime : order.orderTime;
+            const timeDisplay = this.formatTime(itemTime);
+
             return `
                 <tr>
-                    <td><b>${itemName}</b>${statusBadge}<br><small style="color:#64748b">${fmt.format(itemPrice)}</small></td>
-                    <td style="text-align: center;">x${item.quantity}</td>
-                    <td style="text-align: right; font-weight:bold;">${fmt.format(itemTotal)}</td>
+                    <td style="padding:10px; vertical-align:top;">
+                        <b>${itemName}</b>
+                        ${statusBadge}
+                        ${noteHtml}
+                        <div style="font-size:11px; color:#64748b; margin-top:2px;">${fmt.format(itemPrice)}</div>
+                    </td>
+                    <td style="text-align: center; vertical-align:top; padding:10px;">x${item.quantity}</td>
+                    <td style="text-align: right; font-weight:bold; vertical-align:top; padding:10px;">${fmt.format(itemTotal)}</td>
+                    
+                    <td style="text-align: center; vertical-align:top; padding:10px; color:#666; font-size:13px;">
+                        <i class='bx bx-time'></i> ${timeDisplay}
+                    </td>
                 </tr>
             `;
         }).join('');
@@ -206,12 +235,12 @@ const tableManager = {
     },
 
     // ============================================================
-    // LOGIC 3: THANH TOÁN (CẬP NHẬT MỚI & UI TỨC THÌ)
+    // LOGIC 3: THANH TOÁN (LOGIC THUẾ VAT TỪ SETTINGS)
     // ============================================================
 
     openPaymentModal: async function(id, name) {
         this.currentTableId = id;
-        this.currentTableName = name; // Cập nhật tên bàn hiện tại
+        this.currentTableName = name;
         
         this.currentOrderTotal = 0; 
         document.getElementById('modal-total-display').innerText = '...';
@@ -227,8 +256,29 @@ const tableManager = {
                 const res = await fetch(`${API_ORDERS}/table/${id}/active`);
                 if (res.ok) {
                     const order = await res.json();
-                    this.currentOrderTotal = order.totalAmount || 0;
-                    this.renderCheckoutList(order);
+
+                    // --- BƯỚC 1: TÍNH TOÁN LẠI TIỀN VÀ THUẾ ---
+                    // 1. Tính tổng tiền hàng (Subtotal)
+                    let subTotal = 0;
+                    if (order.orderItems) {
+                        subTotal = order.orderItems.reduce((acc, item) => acc + (item.menuItem.price * item.quantity), 0);
+                    }
+
+                    // 2. Lấy thuế VAT từ Settings (nếu chưa load được thì = 0)
+                    const taxRate = (window.settingsApp && window.settingsApp.config) ? window.settingsApp.config.taxRate : 0;
+                    
+                    // 3. Tính tiền thuế
+                    const taxAmount = subTotal * (taxRate / 100);
+                    
+                    // 4. Tính tổng cộng cuối cùng
+                    const finalTotal = subTotal + taxAmount;
+
+                    // 5. Cập nhật biến global để dùng khi bấm nút "Xác nhận thanh toán"
+                    this.currentOrderTotal = finalTotal;
+
+                    // 6. Vẽ giao diện hóa đơn
+                    this.renderCheckoutList(order, subTotal, taxRate, taxAmount, finalTotal);
+
                 } else {
                     if(checkoutItems) checkoutItems.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:15px;">Chưa có món để thanh toán</td></tr>';
                 }
@@ -237,15 +287,18 @@ const tableManager = {
                 if(checkoutItems) checkoutItems.innerHTML = '<tr><td colspan="3" style="text-align:center; color:red;">Lỗi tải dữ liệu</td></tr>';
             }
 
+            // Hiển thị số tổng tiền lớn ở đầu modal
             const fmt = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
-            document.getElementById('modal-total-display').innerText = fmt.format(this.currentOrderTotal);
+            document.getElementById('modal-total-display').innerText = fmt.format(this.currentOrderTotal || 0);
 
+            // Mặc định chọn tiền mặt
             const cashBtn = document.querySelector('.pay-method[data-method="CASH"]');
             if(cashBtn) this.selectMethod(cashBtn);
         }
     },
 
-    renderCheckoutList: function(order) {
+    // --- [CẬP NHẬT] HIỂN THỊ GHI CHÚ TRONG HÓA ĐƠN ---
+    renderCheckoutList: function(order, subTotal, taxRate, taxAmount, finalTotal) {
         const container = document.getElementById('checkout-order-items');
         if (!container) return;
         const fmt = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
@@ -255,15 +308,37 @@ const tableManager = {
             return;
         }
         
-        container.innerHTML = order.orderItems.map(item => `
+        // 1. Render danh sách món
+        let html = order.orderItems.map(item => `
             <tr>
                 <td style="padding:10px; border-bottom:1px solid #f1f5f9;">
                     <div style="font-weight:600; font-size:14px;">${item.menuItem.name}</div>
+                    ${item.note ? `<div style="font-size:11px; color:#666; font-style:italic;">Note: ${item.note}</div>` : ''}
                 </td>
                 <td style="text-align:center; padding:10px; border-bottom:1px solid #f1f5f9; font-weight:bold;">x${item.quantity}</td>
                 <td style="text-align:right; padding:10px; border-bottom:1px solid #f1f5f9;">${fmt.format(item.menuItem.price * item.quantity)}</td>
             </tr>
         `).join('');
+
+        // 2. Render các dòng tổng kết (chỉ hiện khi có tiền)
+        if (subTotal > 0) {
+            html += `
+            <tr style="background-color: #f8fafc;">
+                <td colspan="2" style="text-align: right; padding: 10px; color: #64748b;">Tạm tính:</td>
+                <td style="text-align: right; padding: 10px; font-weight: 600;">${fmt.format(subTotal)}</td>
+            </tr>
+            <tr style="background-color: #f8fafc;">
+                <td colspan="2" style="text-align: right; padding: 10px; color: #d97706;">Thuế VAT (${taxRate}%):</td>
+                <td style="text-align: right; padding: 10px; font-weight: 600; color: #d97706;">+${fmt.format(taxAmount)}</td>
+            </tr>
+            <tr style="background-color: #fffbeb; border-top: 2px solid #e2e8f0;">
+                <td colspan="2" style="text-align: right; padding: 15px; font-weight: 800; font-size: 16px; color: #dc2626;">TỔNG CỘNG:</td>
+                <td style="text-align: right; padding: 15px; font-weight: 800; font-size: 16px; color: #dc2626;">${fmt.format(finalTotal)}</td>
+            </tr>
+            `;
+        }
+
+        container.innerHTML = html;
     },
 
     closeModal: function() {

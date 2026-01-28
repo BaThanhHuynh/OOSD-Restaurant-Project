@@ -1,15 +1,26 @@
 package com.restaurant.model.entity;
 
+import java.time.LocalDateTime;
+
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.restaurant.model.enums.DishStatus;
-import com.restaurant.pattern.state.*;
-import jakarta.persistence.*;
+import com.restaurant.pattern.state.DishState;
+import com.restaurant.pattern.state.OrderedState;
+import com.restaurant.pattern.state.StateFactory;
 
-/**
- * Entity đại diện cho một món ăn trong Order
- * Áp dụng State Pattern để quản lý trạng thái món ăn
- */
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PostLoad;
+import jakarta.persistence.Transient;
+
 @Entity
 @jakarta.persistence.Table(name = "order_items")
 public class OrderItem {
@@ -33,44 +44,44 @@ public class OrderItem {
 
     @Column(name = "unit_price", nullable = false)
     private double unitPrice;
+    
+    @Column(name = "note")
+    private String note;
+
+    // [MỚI] Thêm trường lưu thời gian gọi riêng của món này
+    @Column(name = "order_item_time")
+    private LocalDateTime orderItemTime;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private DishStatus dishStatus;
 
-    @JsonIgnore // Không trả về JSON vì chỉ dùng cho logic backend
-    @Transient // Không lưu vào database vì State là logic
+    @JsonIgnore 
+    @Transient 
     private DishState state;
 
-    // Constructor mặc định
     public OrderItem() {
         this.dishStatus = DishStatus.ORDERED;
         this.state = new OrderedState();
+        // [MỚI] Gán thời gian hiện tại khi khởi tạo
+        this.orderItemTime = LocalDateTime.now();
     }
 
-    // Constructor với parameters
     public OrderItem(MenuItem menuItem, int quantity) {
-        this(); // Phải là statement đầu tiên
+        this(); 
         this.menuItem = menuItem;
         this.quantity = quantity;
-        this.unitPrice = menuItem.getPrice(); // Lưu giá tại thời điểm đặt
+        this.unitPrice = menuItem.getPrice();
+        this.note = ""; 
+        // [MỚI] Gán thời gian hiện tại
+        this.orderItemTime = LocalDateTime.now();
     }
 
-    // ======= STATE PATTERN METHODS (Không dùng if-else) =======
-
-    /**
-     * Khởi tạo state object từ dishStatus khi load từ database
-     */
     @PostLoad
     private void initStateFromStatus() {
-        // Tạo state object tương ứng với dishStatus
-        // Sử dụng Map thay vì if-else để tuân thủ OOSD
         this.state = StateFactory.createState(this.dishStatus);
     }
 
-    /**
-     * Chuyển sang trạng thái tiếp theo
-     */
     public void changeToNextState() {
         if (state == null) {
             initStateFromStatus();
@@ -78,79 +89,36 @@ public class OrderItem {
         state.nextState(this);
     }
 
-    /**
-     * Tính tổng tiền của món
-     * @return Tổng tiền = giá món × số lượng
-     */
     public double calculateSubtotal() {
         return unitPrice * quantity;
     }
 
     // ======= GETTERS & SETTERS ======= 
-    public Long getOrderItemId() {
-        return orderItemId;
-    }
+    public Long getOrderItemId() { return orderItemId; }
+    public void setOrderItemId(Long orderItemId) { this.orderItemId = orderItemId; }
 
-    public void setOrderItemId(Long orderItemId) {
-        this.orderItemId = orderItemId;
-    }
+    public Order getOrder() { return order; }
+    public void setOrder(Order order) { this.order = order; }
 
-    public Order getOrder() {
-        return order;
-    }
+    public MenuItem getMenuItem() { return menuItem; }
+    public void setMenuItem(MenuItem menuItem) { this.menuItem = menuItem; }
 
-    public void setOrder(Order order) {
-        this.order = order;
-    }
+    public int getQuantity() { return quantity; }
+    public void setQuantity(int quantity) { this.quantity = quantity; }
 
-    public MenuItem getMenuItem() {
-        return menuItem;
-    }
+    public double getUnitPrice() { return unitPrice; }
+    public void setUnitPrice(double unitPrice) { this.unitPrice = unitPrice; }
+    
+    public String getNote() { return note; }
+    public void setNote(String note) { this.note = note; }
 
-    public void setMenuItem(MenuItem menuItem) {
-        this.menuItem = menuItem;
-    }
+    // [MỚI] Getter/Setter cho orderItemTime
+    public LocalDateTime getOrderItemTime() { return orderItemTime; }
+    public void setOrderItemTime(LocalDateTime orderItemTime) { this.orderItemTime = orderItemTime; }
 
-    public int getQuantity() {
-        return quantity;
-    }
+    public DishStatus getDishStatus() { return dishStatus; }
+    public void setDishStatus(DishStatus dishStatus) { this.dishStatus = dishStatus; }
 
-    public void setQuantity(int quantity) {
-        this.quantity = quantity;
-    }
-
-    public double getUnitPrice() {
-        return unitPrice;
-    }
-
-    public void setUnitPrice(double unitPrice) {
-        this.unitPrice = unitPrice;
-    }
-
-    public DishStatus getDishStatus() {
-        return dishStatus;
-    }
-
-    public void setDishStatus(DishStatus dishStatus) {
-        this.dishStatus = dishStatus;
-    }
-
-    public DishState getState() {
-        return state;
-    }
-
-    public void setState(DishState state) {
-        this.state = state;
-    }
-
-    @Override
-    public String toString() {
-        return "OrderItem{" +
-                "id=" + orderItemId +
-                ", món=" + menuItem.getName() +
-                ", số lượng=" + quantity +
-                ", trạng thái=" + dishStatus +
-                ", giá=" + calculateSubtotal() +
-                '}';
-    }
+    public DishState getState() { return state; }
+    public void setState(DishState state) { this.state = state; }
 }

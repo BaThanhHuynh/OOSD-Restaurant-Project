@@ -349,7 +349,9 @@ li { list-style: none; }
 .order-header h2 { font-size: 20px; }
 .order-header span { color: var(--text-gray); font-size: 13px; }
 .edit-btn { background: none; border: none; font-size: 20px; color: var(--text-gray); cursor: pointer; }
-
+#tax-amount {
+    display: none;
+}
 .order-tabs { display: flex; gap: 10px; margin-bottom: 15px; background: var(--bg-body); padding: 5px; border-radius: 12px; }
 .tab-btn { flex: 1; border: none; background: transparent; padding: 8px; border-radius: 8px; font-size: 12px; color: var(--text-gray); font-weight: 600; cursor: pointer; }
 .tab-btn.active { background: var(--bg-white); color: var(--text-dark); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
@@ -898,4 +900,82 @@ body.role-staff #checkout-modal .modal-header::after {
 /* Ẩn nút xóa món với Staff */
 body.role-staff .feature-delete {
     display: none !important;
+}
+/* --- TRẠNG THÁI MÓN ĂN --- */
+
+/* Class khi món bị báo hết: Làm xám và mờ đi */
+.item-unavailable {
+    filter: grayscale(100%); /* Chuyển sang trắng đen */
+    opacity: 0.6;            /* Làm mờ */
+    pointer-events: none;    /* Không cho click vào hình (tùy chọn) */
+    position: relative;
+}
+
+/* Giữ cho các nút thao tác vẫn sáng và bấm được */
+.item-unavailable .admin-actions {
+    filter: grayscale(0%);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Thùng rác và nút báo hết */
+.admin-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.btn-action {
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: 0.2s;
+}
+
+.btn-delete {
+    background-color: #fee2e2;
+    color: #dc2626;
+}
+
+.btn-toggle {
+    background-color: #e0f2fe;
+    color: #0284c7;
+}
+
+.btn-toggle.is-out {
+    background-color: #f1f5f9;
+    color: #64748b;
+}
+.menu-card.unavailable {
+    opacity: 0.6;              /* Làm mờ */
+    filter: grayscale(100%);   /* Chuyển trắng đen */
+    pointer-events: none;      /* Chặn click chuột */
+    cursor: not-allowed;
+    position: relative;
+    border: 1px dashed #ccc;
+}
+
+/* Nhãn HẾT HÀNG đè lên hình */
+.status-badge-out {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(220, 38, 38, 0.9); /* Màu đỏ */
+    color: white;
+    padding: 5px 10px;
+    font-size: 14px;
+    font-weight: bold;
+    border-radius: 4px;
+    text-transform: uppercase;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    z-index: 10;
+}
+
+/* Ẩn nút cộng khi hết hàng */
+.menu-card.unavailable .add-btn {
+    display: none;
 }

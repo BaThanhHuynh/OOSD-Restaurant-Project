@@ -1,6 +1,7 @@
 /**
  * MENU POS LOGIC (BÁN HÀNG)
  * File: frontend/src/js/Menu.js
+ * Cập nhật: Thêm tính năng Ghi chú món ăn & Logic hiển thị món Hết hàng
  */
 
 // Cấu hình danh mục
@@ -26,7 +27,7 @@ const menuApp = {
         this.fetchMenuData();
         this.renderCart();
 
-        // [FIX] Chỉ update header nếu có activeTableId
+        // Chỉ update header nếu có activeTableId
         const tableId = localStorage.getItem('activeTableId');
         if (tableId && tableId !== 'null') {
             this.updateHeaderTableInfo();
@@ -34,11 +35,11 @@ const menuApp = {
 
         this.updateViewMode();
 
-        // [MỚI] Tạo sẵn Modal cảnh báo View Mode
+        // Tạo sẵn Modal cảnh báo View Mode
         this.createViewOnlyModal();
     },
 
-    // --- [MỚI] TẠO MODAL CẢNH BÁO CHẾ ĐỘ XEM ---
+    // --- TẠO MODAL CẢNH BÁO CHẾ ĐỘ XEM ---
     createViewOnlyModal: function () {
         if (document.getElementById('view-mode-modal')) return;
 
@@ -157,6 +158,7 @@ const menuApp = {
         `).join('');
     },
 
+    // --- RENDER DANH SÁCH MÓN ĂN ---
     renderProducts: function () {
         const container = document.getElementById('product-grid');
         if (!container) return;
@@ -173,10 +175,32 @@ const menuApp = {
             const inCart = this.state.cart.find(i => i.id === product.id);
             const imgSrc = product.imageUrl || 'src/assets/Nha_hang.jpg';
 
+            // Logic Hết hàng
+            const status = product.status ? product.status.toUpperCase() : 'AVAILABLE';
+            const isAvailable = (status === 'AVAILABLE');
+            const cardClass = isAvailable ? '' : 'unavailable';
+            const clickEvent = isAvailable ? `onclick="menuApp.addToCart(${product.id})"` : '';
+            const badgeHtml = isAvailable ? '' : `<div class="status-badge-out" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); background:rgba(220,38,38,0.9); color:white; padding:5px 10px; font-weight:bold; border-radius:4px; z-index:10; white-space:nowrap;">HẾT HÀNG</div>`;
+
+            let footerHtml = '';
+            if (!isAvailable) {
+                footerHtml = `<button class="btn-add" disabled style="background:#ccc; cursor:not-allowed;">Hết hàng</button>`;
+            } else if (inCart) {
+                footerHtml = `
+                    <div class="qty-control-grid" onclick="event.stopPropagation()">
+                        <button class="btn-qty" onclick="menuApp.decreaseQty(${product.id})"><i class='bx bx-minus'></i></button>
+                        <span class="qty-num">${inCart.qty}</span>
+                        <button class="btn-qty" onclick="menuApp.addToCart(${product.id})"><i class='bx bx-plus'></i></button>
+                    </div>`;
+            } else {
+                footerHtml = `<button class="btn-add">Thêm món</button>`;
+            }
+
             return `
-            <div class="product-card" onclick="menuApp.addToCart(${product.id})" style="cursor: pointer;">
-                <div class="card-img-placeholder">
+            <div class="product-card ${cardClass}" ${clickEvent} style="cursor: ${isAvailable ? 'pointer' : 'not-allowed'}; position:relative;">
+                <div class="card-img-placeholder" style="position:relative;">
                     <img src="${imgSrc}" alt="${product.name}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='src/assets/Nha_hang.jpg'">
+                    ${badgeHtml}
                 </div>
                 <h3>${product.name}</h3>
                 <div class="card-meta">
@@ -184,32 +208,39 @@ const menuApp = {
                     ${product.badge ? `<span class="badge-inline">${product.badge}</span>` : ''}
                 </div>
                 <div class="card-footer">
-                    ${inCart ? `
-                        <div class="qty-control-grid" onclick="event.stopPropagation()">
-                            <button class="btn-qty" onclick="menuApp.decreaseQty(${product.id})"><i class='bx bx-minus'></i></button>
-                            <span class="qty-num">${inCart.qty}</span>
-                            <button class="btn-qty" onclick="menuApp.addToCart(${product.id})"><i class='bx bx-plus'></i></button>
-                        </div>
-                    ` : `<button class="btn-add">Thêm món</button>`}
+                    ${footerHtml}
                 </div>
             </div>`;
         }).join('');
     },
 
+    // --- [MỚI] RENDER GIỎ HÀNG CÓ Ô GHI CHÚ ---
     renderCart: function () {
         const container = document.getElementById('cart-items');
         if (!container) return;
+        
         if (this.state.cart.length === 0) {
             container.innerHTML = `<div style="text-align:center; color:#9ca3af; margin-top:50px;"><i class='bx bx-basket' style="font-size:40px; margin-bottom:10px;"></i><p style="font-size:13px;">Chưa chọn món nào</p></div>`;
             this.updateTotals();
             return;
         }
+
         container.innerHTML = this.state.cart.map(item => `
-            <div class="order-item">
-                <div class="item-img"><img src="${item.imageUrl || 'src/assets/Nha_hang.jpg'}" onerror="this.src='src/assets/Nha_hang.jpg'"></div>
-                <div class="item-info"><h4>${item.name}</h4><span class="item-price">${this.formatMoney(item.price)}</span></div>
-                <div class="item-qty-display">x${item.qty}</div>
-                <button class="btn-remove-item" onclick="menuApp.removeFromCart(${item.id})"><i class='bx bx-trash'></i></button>
+            <div class="order-item" style="flex-wrap: wrap; padding-bottom: 10px; border-bottom: 1px solid #f0f0f0;">
+                <div style="display:flex; width:100%; align-items:center; margin-bottom: 5px;">
+                    <div class="item-img"><img src="${item.imageUrl || 'src/assets/Nha_hang.jpg'}" onerror="this.src='src/assets/Nha_hang.jpg'"></div>
+                    <div class="item-info"><h4>${item.name}</h4><span class="item-price">${this.formatMoney(item.price)}</span></div>
+                    <div class="item-qty-display">x${item.qty}</div>
+                    <button class="btn-remove-item" onclick="menuApp.removeFromCart(${item.id})"><i class='bx bx-trash'></i></button>
+                </div>
+                
+                <div style="width:100%; padding-left: 50px;">
+                    <input type="text" 
+                           placeholder="Ghi chú (ít cay, không hành...)" 
+                           value="${item.note || ''}" 
+                           onchange="menuApp.updateNote(${item.id}, this.value)"
+                           style="width:100%; padding:6px 10px; border:1px solid #e5e7eb; border-radius:6px; font-size:12px; background:#f9fafb; outline:none; transition:0.2s;">
+                </div>
             </div>
         `).join('');
         this.updateTotals();
@@ -222,10 +253,8 @@ const menuApp = {
     },
 
     addToCart: function (id) {
-        // [SỬA ĐỔI] Thay alert bằng Modal xịn xò
         const isViewOnly = localStorage.getItem('isViewOnly') === 'true';
         if (isViewOnly) {
-            // Hiện Modal thay vì Alert
             const modal = document.getElementById('view-mode-modal');
             if (modal) modal.style.display = 'flex';
             return;
@@ -233,8 +262,18 @@ const menuApp = {
 
         const product = this.state.products.find(p => p.id === id);
         if (!product) return;
+
+        // Validation Hết hàng
+        const status = product.status ? product.status.toUpperCase() : 'AVAILABLE';
+        if (status !== 'AVAILABLE') {
+            alert("Món này hiện đã HẾT HÀNG!");
+            return;
+        }
+
         const exist = this.state.cart.find(i => i.id === id);
-        if (exist) exist.qty++; else this.state.cart.push({ ...product, qty: 1 });
+        // [MỚI] Khởi tạo note rỗng khi thêm món mới
+        if (exist) exist.qty++; else this.state.cart.push({ ...product, qty: 1, note: '' });
+        
         this.renderCart();
         this.renderProducts();
     },
@@ -259,45 +298,46 @@ const menuApp = {
         this.renderProducts();
     },
 
+    // [MỚI] HÀM CẬP NHẬT GHI CHÚ
+    updateNote: function(id, value) {
+        const item = this.state.cart.find(i => i.id === id);
+        if(item) {
+            item.note = value;
+        }
+        // Không gọi renderCart lại để tránh mất focus ô input
+    },
+
     updateTotals: function () {
         const subTotal = this.state.cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
-        const tax = subTotal * 0.05;
-        const total = subTotal + tax;
         const setVal = (id, val) => {
             const el = document.getElementById(id);
             if (el) el.textContent = this.formatMoney(val);
         };
         setVal('sub-total', subTotal);
-        setVal('tax-amount', tax);
-        setVal('final-total', total);
+        setVal('tax-amount', 0); 
+        setVal('final-total', subTotal);
     },
 
     submitOrder: async function () {
-        // 1. Kiểm tra giỏ hàng
         if (this.state.cart.length === 0) {
             alert("Vui lòng chọn món trước!");
             return;
         }
 
-        // 2. Kiểm tra bàn
         const tableIdStr = localStorage.getItem('activeTableId');
         const tableNumber = localStorage.getItem('activeTableNumber');
-
         if (!tableIdStr) {
             alert("Vui lòng chọn bàn từ trang 'Quản lý bàn' trước!");
-            // Chuyển hướng người dùng về trang chọn bàn
             if (window.app) app.loadPage('tables-page', 'nav-tables');
             return;
         }
-        const tableId = parseInt(tableIdStr); // Chuyển về số nguyên
+        const tableId = parseInt(tableIdStr);
 
         if (!confirm(`Xác nhận gọi ${this.state.cart.length} món cho bàn ${tableNumber}?`)) return;
 
         try {
             // --- BƯỚC 1: TÌM HOẶC TẠO ORDER ---
             let orderId;
-
-            // Gọi API kiểm tra xem bàn này đã có Order đang mở chưa
             let activeOrderRes = await fetch(`${API_ORDERS}/table/${tableId}/active`);
 
             if (activeOrderRes.ok) {
@@ -305,7 +345,6 @@ const menuApp = {
                 orderId = activeOrder.id || activeOrder.orderId;
                 console.log("✅ Tìm thấy Order đang mở:", orderId);
             } else {
-                // Nếu chưa có (404), gọi API tạo Order mới
                 console.log("📝 Tạo Order mới cho bàn", tableId);
                 const createRes = await fetch(`${API_ORDERS}/table/${tableId}`, {
                     method: 'POST',
@@ -313,29 +352,12 @@ const menuApp = {
                 });
 
                 if (!createRes.ok) {
-                    // Lấy thông báo lỗi chi tiết từ backend
-                    let errorMessage = "Không thể tạo đơn hàng mới cho bàn này.";
+                    let errorMessage = "Không thể tạo đơn hàng mới.";
                     try {
                         const errorText = await createRes.text();
-                        if (errorText) {
-                            errorMessage += `\n\nChi tiết lỗi: ${errorText}`;
-                        }
-                    } catch (e) {
-                        // Không parse được error text
-                    }
-
-                    // Hiển thị lỗi chi tiết
-                    alert(
-                        `❌ ${errorMessage}\n\n` +
-                        `Nguyên nhân có thể:\n` +
-                        `- Bàn ${tableNumber} (ID: ${tableId}) không tồn tại trong database\n` +
-                        `- Backend chưa chạy hoặc mất kết nối\n` +
-                        `- Bàn chưa được mở (status không phải OCCUPIED)\n\n` +
-                        `Hãy kiểm tra:\n` +
-                        `1. Backend đang chạy tại http://localhost:8080\n` +
-                        `2. Database có dữ liệu bàn\n` +
-                        `3. Bàn đã được mở (click vào bàn trống để mở)`
-                    );
+                        if (errorText) errorMessage += `\nChi tiết: ${errorText}`;
+                    } catch (e) {}
+                    alert(`❌ ${errorMessage}`);
                     throw new Error(errorMessage);
                 }
 
@@ -344,11 +366,11 @@ const menuApp = {
                 console.log("✅ Tạo Order mới thành công:", orderId);
             }
 
-            // --- BƯỚC 2: GỬI DANH SÁCH MÓN ---
-            // Chuẩn bị dữ liệu đúng chuẩn Backend yêu cầu (ItemRequest)
+            // --- BƯỚC 2: GỬI MÓN + GHI CHÚ ---
             const itemsPayload = this.state.cart.map(item => ({
                 menuItemId: item.id,
-                quantity: item.qty
+                quantity: item.qty,
+                note: item.note || '' // [QUAN TRỌNG] Gửi kèm note lên backend
             }));
 
             console.log("📤 Gửi danh sách món:", itemsPayload);
@@ -361,59 +383,39 @@ const menuApp = {
 
             if (addItemsRes.ok) {
                 console.log("✅ Thêm món thành công!");
-
-                // RESET GIỎ HÀNG SAU KHI GỌI THÀNH CÔNG
                 this.state.cart = [];
                 this.renderCart();
 
-                // Hiển thị thông báo thành công và hỏi người dùng muốn làm gì tiếp theo
                 const viewKitchen = confirm(
-                    `✅ Đã gọi món thành công cho Bàn ${tableNumber}!\n\n` +
-                    `Món ăn đã được chuyển đến bếp.\n\n` +
+                    `✅ Đã gọi món thành công cho Bàn ${tableNumber}!\n` +
                     `Bạn có muốn xem trạng thái món ăn không?`
                 );
 
                 if (viewKitchen) {
-                    // Chuyển sang màn hình Kitchen Monitor
                     if (window.app) {
                         app.loadPage('kitchen-page', 'nav-kitchen');
-                        // Làm mới dữ liệu Kitchen Monitor ngay lập tức
                         setTimeout(() => {
-                            if (window.kitchenApp) {
-                                kitchenApp.fetchData();
-                            }
+                            if (window.kitchenApp) kitchenApp.fetchData();
                         }, 100);
                     }
                 } else {
-                    // Chuyển về màn hình quản lý bàn
                     if (window.app) app.loadPage('tables-page', 'nav-tables');
                 }
             } else {
                 const errText = await addItemsRes.text();
                 console.error("❌ Lỗi thêm món:", errText);
-                alert(
-                    `❌ Lỗi khi thêm món vào đơn hàng!\n\n` +
-                    `Chi tiết: ${errText}\n\n` +
-                    `Vui lòng thử lại hoặc liên hệ quản trị viên.`
-                );
+                alert(`❌ Lỗi khi thêm món vào đơn hàng!\nChi tiết: ${errText}`);
             }
 
         } catch (error) {
             console.error('❌ Lỗi gọi món:', error);
-
-            // Chỉ hiển thị alert nếu chưa hiển thị ở trên
             if (!error.message || !error.message.includes("Không thể tạo đơn hàng")) {
-                alert(
-                    "❌ Lỗi kết nối Server!\n\n" +
-                    "Vui lòng kiểm tra:\n" +
-                    "- Backend đã chạy chưa (Port 8080)\n" +
-                    "- Kết nối mạng\n" +
-                    "- Console để xem chi tiết lỗi"
-                );
+                alert("❌ Lỗi kết nối Server! Vui lòng kiểm tra Backend.");
             }
         }
     }
 };
+
 window.menuApp = menuApp;
 document.addEventListener('DOMContentLoaded', () => {
     menuApp.init();

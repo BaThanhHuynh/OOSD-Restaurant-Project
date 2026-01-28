@@ -25,11 +25,12 @@
             <nav class="nav-menu">
                 <a href="#" class="nav-item active" id="nav-tables" onclick="app.loadPage('tables-page', 'nav-tables'); return false;">
                     <i class='bx bx-grid-alt icon'></i> Quản lý bàn
+                </a>
+                
                 <a href="#" class="nav-item" id="nav-pos" onclick="app.loadPage('pos-page', 'nav-pos'); return false;">
                     <i class='bx bxs-dashboard icon'></i> Menu
                 </a>
                 
-                </a>
                 <a href="#" class="nav-item" id="nav-kitchen" onclick="app.loadPage('kitchen-page', 'nav-kitchen'); return false;">
                     <i class='bx bx-time icon'></i> Trạng thái món ăn
                 </a>
@@ -72,10 +73,9 @@
             <header class="top-bar">
                 <div class="search-bar">
                     <i class='bx bx-search'></i>
-                    <input type="text" placeholder="Tìm kiếm...">
+                    <input type="text" id="global-search-input" placeholder="Tìm kiếm ..." oninput="app.handleGlobalSearch(this.value)">
                 </div>
             </header>
-
             <section id="pos-page" class="page" style="display: none; height: 100%; flex-direction: column;">
                 <div class="categories" id="categories-list"></div>
                 <div class="product-grid" id="product-grid"></div>
@@ -240,18 +240,17 @@
             </div>
             <div class="modal-body" style="flex: 1; overflow-y: auto; background: #f8fafc; padding: 0;">
                 <div class="order-info-container" style="padding: 20px;">
-                    <table class="detail-table" style="width: 100%; border-collapse: separate; border-spacing: 0; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <table class="detail-table">
                         <thead>
-                            <tr style="background: #f1f5f9; color: #475569; text-align: left;">
-                                <th style="padding: 15px;">Món ăn</th>
-                                <th style="padding: 15px; text-align: center;">SL</th>
-                                <th style="padding: 15px; text-align: center;">Thời gian</th>
-                                <th style="padding: 15px; text-align: right;">Thành tiền</th>
+                            <tr>
+                                <th style="text-align: left;">Món</th>
+                                <th style="width: 50px; text-align: center;">SL</th>
+                                <th style="width: 100px; text-align: right;">Thành tiền</th>
+                                <th style="width: 80px; text-align: center;">Thời gian</th>
                             </tr>
                         </thead>
                         <tbody id="detail-order-list"></tbody>
-                    </table>
-                    <div id="detail-empty-msg" style="text-align: center; padding: 50px 20px; color: #94a3b8; display: none;">
+                    </table>                    <div id="detail-empty-msg" style="text-align: center; padding: 50px 20px; color: #94a3b8; display: none;">
                         <i class='bx bx-dish' style="font-size: 64px; margin-bottom: 15px; color: #cbd5e1;"></i>
                         <p style="font-size: 16px;">Bàn này chưa gọi món nào.</p>
                     </div>

@@ -23,17 +23,17 @@ public class MenuService {
         return menuRepository.findAll();
     }
 
-    // 2. Thêm món (Nhận nguyên đối tượng MenuItem)
+    // 2. Thêm món
     public MenuItem addMenuItem(MenuItem item) {
-        // Xử lý giá trị mặc định nếu thiếu
+        // Xử lý giá trị mặc định
         if (item.getImageUrl() == null || item.getImageUrl().isEmpty()) {
             item.setImageUrl("src/assets/Nha_hang.jpg");
         }
-        if (item.getStatus() == null) {
-            item.setStatus("available");
+        // [QUAN TRỌNG] Mặc định là 'AVAILABLE' (viết hoa)
+        if (item.getStatus() == null || item.getStatus().isEmpty()) {
+            item.setStatus("AVAILABLE");
         }
         
-        // Gọi hàm save() của JPA (tự động INSERT vào database)
         return menuRepository.save(item);
     }
 
@@ -46,7 +46,7 @@ public class MenuService {
         }
     }
 
-    // 4. Lấy 1 món (Dùng cho Order)
+    // 4. Lấy 1 món
     public MenuItem getMenuItemById(int id) {
         return menuRepository.findById(id).orElse(null);
     }

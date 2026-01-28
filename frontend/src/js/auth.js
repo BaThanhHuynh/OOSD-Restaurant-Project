@@ -2,7 +2,6 @@
 
 const auth = {
     // Cấu hình đường dẫn API (Backend phải đang chạy)
-    // Giả sử server Java Spring Boot của bạn chạy ở cổng 8080
     API_BASE_URL: 'http://localhost:8080/api/auth',
 
     init: function() {
@@ -38,15 +37,36 @@ const auth = {
                 this.handleRegister();
             });
         }
+
+        // --- Sự kiện cho form đổi mật khẩu ---
+        const forgotForm = document.getElementById('forgot-pass-form');
+        if(forgotForm) {
+            forgotForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleChangePassword();
+            });
+        }
     },
 
-    // Chuyển đổi qua lại giữa form đăng nhập/đăng ký
+    // --- LOGIC UI: Chuyển đổi giữa 3 form ---
     switchMode: function(mode) {
+        // 1. Ẩn tất cả các form
         document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+        
+        // 2. Hiện form được chọn và reset form
+        let targetFormId = '';
         if (mode === 'login') {
-            document.getElementById('login-form').classList.add('active');
-        } else {
-            document.getElementById('register-form').classList.add('active');
+            targetFormId = 'login-form';
+        } else if (mode === 'register') {
+            targetFormId = 'register-form';
+        } else if (mode === 'forgot') {
+            targetFormId = 'forgot-pass-form';
+            // Reset dữ liệu cũ khi mở form
+            document.getElementById('forgot-pass-form').reset();
+        }
+
+        if(targetFormId) {
+            document.getElementById(targetFormId).classList.add('active');
         }
     },
 
@@ -70,7 +90,7 @@ const auth = {
         suffixSpan.textContent = suffix;
     },
 
-    // --- GỌI API ĐĂNG KÝ (Lưu vào Database thật) ---
+    // --- API 1: ĐĂNG KÝ ---
     handleRegister: async function() {
         const username = document.getElementById('reg-username').value.trim();
         const password = document.getElementById('reg-password').value;
@@ -79,17 +99,13 @@ const auth = {
         const emailPrefix = document.getElementById('reg-email-prefix').value.trim();
         const emailSuffix = document.getElementById('reg-email-suffix').textContent;
 
-        // 1. Validate dữ liệu đầu vào
         if (!username || !emailPrefix || !password) {
             alert("Vui lòng nhập đầy đủ thông tin!");
             return;
         }
 
-        // 2. Ghép email hoàn chỉnh
         const fullEmail = emailPrefix + emailSuffix;
 
-        // 3. Chuẩn bị dữ liệu gửi đi (JSON)
-        // Lưu ý: Không gửi full_name vì database đã xóa cột này
         const registerData = {
             username: username,
             password: password,
@@ -98,37 +114,28 @@ const auth = {
         };
 
         try {
-            // Gửi request POST đến Backend
             const response = await fetch(`${this.API_BASE_URL}/register`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(registerData)
             });
 
-            // 4. Xử lý phản hồi từ Server
             if (response.ok) {
                 alert(`Đăng ký thành công!\nTài khoản: ${username}\nEmail: ${fullEmail}\nVui lòng đăng nhập.`);
-                
-                // Reset form và chuyển về trang đăng nhập
                 document.getElementById('register-form').reset();
                 this.switchMode('login');
-                
-                // Điền sẵn username để tiện đăng nhập
                 document.getElementById('login-username').value = username;
             } else {
-                // Nếu server trả về lỗi (ví dụ: trùng username)
-                const errorData = await response.text(); // Hoặc response.json() tùy backend
+                const errorData = await response.text();
                 alert("Đăng ký thất bại: " + errorData);
             }
         } catch (error) {
             console.error("Lỗi kết nối:", error);
-            alert("Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại Backend.");
+            alert("Không thể kết nối đến máy chủ.");
         }
     },
 
-    // --- GỌI API ĐĂNG NHẬP (Check Database thật) ---
+    // --- API 2: ĐĂNG NHẬP ---
     handleLogin: async function() {
         const loginInput = document.getElementById('login-username').value.trim();
         const passwordInput = document.getElementById('login-password').value;
@@ -138,13 +145,6 @@ const auth = {
             return;
         }
 
-        // Dữ liệu đăng nhập
-        const loginData = {
-            username: loginInput, // Backend cần xử lý để check được cả username hoặc email
-            password: passwordInput
-        };
-
-        // Hiệu ứng loading nút bấm
         const btn = document.querySelector('#login-form .btn-submit');
         const originalText = btn.textContent;
         btn.textContent = 'Đang xử lý...';
@@ -153,20 +153,13 @@ const auth = {
         try {
             const response = await fetch(`${this.API_BASE_URL}/login`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(loginData)
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: loginInput, password: passwordInput })
             });
 
             if (response.ok) {
-                // Server trả về thông tin User (và có thể là Token JWT)
                 const userData = await response.json();
-                
-                // Lưu thông tin vào LocalStorage để duy trì phiên đăng nhập ở Frontend
-                // userData nên có format: { username: '...', role: '...', email: '...' }
                 localStorage.setItem('user_token', JSON.stringify(userData));
-                
                 window.location.href = 'index.html';
             } else {
                 alert('Sai tên đăng nhập hoặc mật khẩu!');
@@ -176,6 +169,58 @@ const auth = {
         } catch (error) {
             console.error("Lỗi đăng nhập:", error);
             alert("Lỗi kết nối đến server!");
+            btn.textContent = originalText;
+            btn.disabled = false;
+        }
+    },
+
+    // --- API 3: ĐỔI MẬT KHẨU (MỚI) ---
+    handleChangePassword: async function() {
+        const username = document.getElementById('fp-username').value.trim();
+        const oldPassword = document.getElementById('fp-old-pass').value;
+        const newPassword = document.getElementById('fp-new-pass').value;
+
+        if (!username || !oldPassword || !newPassword) {
+            alert("Vui lòng nhập đầy đủ thông tin!");
+            return;
+        }
+
+        // Validation phía client (tùy chọn)
+        if (newPassword.length < 3) {
+            alert("Mật khẩu mới phải có ít nhất 3 ký tự!");
+            return;
+        }
+
+        const btn = document.querySelector('#forgot-pass-form .btn-submit');
+        const originalText = btn.textContent;
+        btn.textContent = 'Đang xử lý...';
+        btn.disabled = true;
+
+        try {
+            // Gọi API endpoint /change-password
+            const response = await fetch(`${this.API_BASE_URL}/change-password`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: username,
+                    oldPassword: oldPassword,
+                    newPassword: newPassword
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                alert(data.message || "Đổi mật khẩu thành công! Vui lòng đăng nhập lại.");
+                document.getElementById('forgot-pass-form').reset();
+                this.switchMode('login'); // Tự động chuyển về trang đăng nhập
+            } else {
+                alert("Lỗi: " + (data.message || "Không thể đổi mật khẩu"));
+            }
+        } catch (error) {
+            console.error("Lỗi đổi mật khẩu:", error);
+            alert("Không thể kết nối đến server!");
+        } finally {
             btn.textContent = originalText;
             btn.disabled = false;
         }

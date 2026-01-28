@@ -149,7 +149,18 @@
     border-color: var(--primary-color); 
     box-shadow: 0 0 0 4px rgba(24, 122, 66, 0.1); 
 }
+/* Định dạng bảng chi tiết món */
+#order-items-body td {
+    vertical-align: middle;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
 
+/* Căn chỉnh cột thời gian */
+#order-items-body td:last-child {
+    font-size: 0.9em;
+    white-space: nowrap; /* Giữ giờ không bị xuống dòng */
+}
 /* =========================================
    6. CHECKOUT MODAL
    ========================================= */

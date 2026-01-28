@@ -1,13 +1,17 @@
-/**
- * Core Application Logic
- * File: frontend/src/js/app.js
- */
-
 const app = {
     // 1. Khởi chạy ứng dụng
     init: function() {
         // Nếu chưa đăng nhập thì dừng lại ngay
         if (!this.checkAuth()) return;
+
+        // --- [FIX] QUAN TRỌNG: Tải Settings (Thuế) ngay khi vào App ---
+        // Để đảm bảo TableManager có dữ liệu thuế để tính toán
+        if (window.settingsApp) {
+            // Gọi hàm loadConfigFromAPI của Settings.js mà không cần render giao diện settings
+            window.settingsApp.loadConfigFromAPI().then(() => {
+                console.log("Đã tải cấu hình thuế thành công!");
+            });
+        }
 
         // Mặc định load trang Quản lý bàn khi vào app
         this.loadPage('tables-page', 'nav-tables');
@@ -28,53 +32,52 @@ const app = {
     },
 
     // 2. Kiểm tra quyền & Hiển thị Menu Sidebar
-checkAuth: function() {
-    const userToken = localStorage.getItem('user_token');
-    if (!userToken) {
-        window.location.href = 'Login.html';
-        return false;
-    }
+    checkAuth: function() {
+        const userToken = localStorage.getItem('user_token');
+        if (!userToken) {
+            window.location.href = 'Login.html';
+            return false;
+        }
 
-    let user;
-    try {
-        user = JSON.parse(userToken);
-    } catch (e) {
-        localStorage.removeItem('user_token');
-        window.location.href = 'Login.html';
-        return false;
-    }
-    
-    // --- 1. XỬ LÝ GIAO DIỆN USER ---
-    const userNameEl = document.getElementById('user-name');
-    const userRoleEl = document.getElementById('user-role');
-    const userAvatarEl = document.getElementById('user-avatar');
-    
-    // Mapping tên vai trò hiển thị
-    const roleMapping = {
-        'admin': 'Quản lý',
-        'cashier': 'Thu ngân',
-        'staff': 'Nhân viên'
-    };
-    
-    if(userNameEl) userNameEl.textContent = user.name || user.username;
-    if(userRoleEl) userRoleEl.textContent = roleMapping[user.role] || user.role;
-    if(userAvatarEl) userAvatarEl.textContent = (user.name || "U").charAt(0).toUpperCase();
+        let user;
+        try {
+            user = JSON.parse(userToken);
+        } catch (e) {
+            localStorage.removeItem('user_token');
+            window.location.href = 'Login.html';
+            return false;
+        }
+        
+        // --- 1. XỬ LÝ GIAO DIỆN USER ---
+        const userNameEl = document.getElementById('user-name');
+        const userRoleEl = document.getElementById('user-role');
+        const userAvatarEl = document.getElementById('user-avatar');
+        
+        // Mapping tên vai trò hiển thị
+        const roleMapping = {
+            'admin': 'Quản lý',
+            'cashier': 'Thu ngân',
+            'staff': 'Nhân viên'
+        };
+        
+        if(userNameEl) userNameEl.textContent = user.name || user.username;
+        if(userRoleEl) userRoleEl.textContent = roleMapping[user.role] || user.role;
+        if(userAvatarEl) userAvatarEl.textContent = (user.name || "bx bx-manager").charAt(0).toUpperCase();
 
-    // --- 2. PHÂN QUYỀN (QUAN TRỌNG NHẤT) ---
-    // Xóa hết các class role cũ (nếu có) để tránh lỗi khi switch tài khoản
-    document.body.classList.remove('role-admin', 'role-cashier', 'role-staff');
-    
-    // Thêm class role hiện tại vào body
-    // Ví dụ: <body class="role-admin"> hoặc <body class="role-staff">
-    if (user.role) {
-        document.body.classList.add(`role-${user.role}`);
-    }
+        // --- 2. PHÂN QUYỀN (QUAN TRỌNG NHẤT) ---
+        // Xóa hết các class role cũ (nếu có) để tránh lỗi khi switch tài khoản
+        document.body.classList.remove('role-admin', 'role-cashier', 'role-staff');
+        
+        // Thêm class role hiện tại vào body
+        if (user.role) {
+            document.body.classList.add(`role-${user.role}`);
+        }
 
-    return true; 
-},
+        return true; 
+    },
+
     // 3. Hàm mới: Bật tắt menu User khi click vào tên
     toggleUserMenu: function(event) {
-        // Ngăn chặn sự kiện click lan ra document (tránh bị đóng ngay lập tức)
         if(event) event.stopPropagation();
 
         const dropdown = document.getElementById('user-dropdown-menu');
@@ -129,6 +132,7 @@ checkAuth: function() {
                 if(window.adminMenuApp) window.adminMenuApp.init();
                 break;
             case 'settings-page':
+                // init() của settingsApp vừa load API vừa render giao diện
                 if(window.settingsApp) window.settingsApp.init();
                 break;
             case 'statistics-page':
@@ -145,7 +149,6 @@ checkAuth: function() {
     }
 };
 
-// Gán vào window
 window.app = app;
 
 document.addEventListener('DOMContentLoaded', () => {

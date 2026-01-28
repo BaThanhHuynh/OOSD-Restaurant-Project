@@ -47,6 +47,7 @@
 <body>
     <div class="login-container">
         <div class="forms-wrapper">
+            
             <form id="login-form" class="auth-form active">
                 <div class="header">
                     <div class="logo-icon"><i class='bx bxs-bowl-hot'></i></div>
@@ -67,13 +68,12 @@
                     <div class="input-field">
                         <i class='bx bx-lock-alt'></i>
                         <input type="password" id="login-password" placeholder="••••••" required>
-                        <i class='bx bx-hide toggle-password'></i>
                     </div>
                 </div>
 
                 <div class="actions">
                     <label class="remember"><input type="checkbox"> Ghi nhớ</label>
-                    <a href="#">Quên mật khẩu?</a>
+                    <a href="#" onclick="auth.switchMode('forgot')">Quên / Đổi mật khẩu?</a>
                 </div>
 
                 <button type="submit" class="btn-submit">Đăng nhập</button>
@@ -119,6 +119,44 @@
                 <button type="submit" class="btn-submit">Đăng ký</button>
                 <div class="switch-form">Đã có tài khoản? <a href="#" onclick="auth.switchMode('login')">Đăng nhập</a></div>
             </form>
+
+            <form id="forgot-pass-form" class="auth-form">
+                <div class="header">
+                    <h2>Đổi Mật Khẩu</h2>
+                    <p>Nhập thông tin xác thực để đổi mật khẩu</p>
+                </div>
+
+                <div class="input-group">
+                    <label>Tên đăng nhập (Username)</label>
+                    <div class="input-field">
+                        <i class='bx bx-user-circle'></i>
+                        <input type="text" id="fp-username" placeholder="Nhập tên đăng nhập" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Mật khẩu cũ</label>
+                    <div class="input-field">
+                        <i class='bx bx-key'></i>
+                        <input type="password" id="fp-old-pass" placeholder="Nhập mật khẩu hiện tại" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Mật khẩu mới</label>
+                    <div class="input-field">
+                        <i class='bx bx-lock-open-alt'></i>
+                        <input type="password" id="fp-new-pass" placeholder="Nhập mật khẩu mới" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit">Xác nhận đổi</button>
+
+                <div class="switch-form">
+                    <a href="#" onclick="auth.switchMode('login')"><i class='bx bx-arrow-back'></i> Quay lại đăng nhập</a>
+                </div>
+            </form>
+
         </div>
         
         <div class="decoration-side">

@@ -1,19 +1,19 @@
 /**
  * KITCHEN MONITOR (MÀN HÌNH BẾP - TỰ ĐỘNG HÓA)
  * File: frontend/src/js/KitchenMonitor.js
+ * Cập nhật: Sửa lỗi tính giờ (dùng orderItemTime) & Hiển thị Note
  */
 
 const kitchenApp = {
     items: [],
     intervalId: null,
-    processingSet: new Set(), // Để tránh gọi API trùng lặp cho cùng 1 món
+    processingSet: new Set(), 
 
-    // --- CẤU HÌNH THỜI GIAN TỰ ĐỘNG (Đơn vị: Giây) ---
     config: {
-        autoMode: true,     // Bật/tắt chế độ tự động
-        timeToStart: 10,    // Sau bao lâu thì chuyển từ ORDERED -> COOKING
-        timeToCook: 20,     // Nấu trong bao lâu thì chuyển từ COOKING -> READY
-        timeToServe: 15     // Để ở trạng thái READY bao lâu thì biến mất (SERVED)
+        autoMode: true,     
+        timeToStart: 10,    
+        timeToCook: 20,     
+        timeToServe: 15     
     },
 
     init() {
@@ -24,7 +24,6 @@ const kitchenApp = {
 
     startPolling() {
         if (this.intervalId) clearInterval(this.intervalId);
-        // Polling mỗi 2 giây để cập nhật nhanh hơn
         this.intervalId = setInterval(() => {
             if(document.querySelector('.kitchen-board')) {
                 this.fetchData();
@@ -50,6 +49,12 @@ const kitchenApp = {
             order.orderItems.forEach(item => {
                 const status = item.dishStatus; 
                 if (['ORDERED', 'COOKING', 'READY'].includes(status)) {
+                    
+                    // [LOGIC MỚI QUAN TRỌNG]
+                    // Ưu tiên dùng item.orderItemTime (giờ gọi món).
+                    // Nếu null (do dữ liệu cũ), fallback về order.orderTime (giờ mở bàn).
+                    const timeSource = item.orderItemTime ? item.orderItemTime : order.orderTime;
+
                     newItems.push({
                         id: item.orderItemId, 
                         orderId: order.orderId,
@@ -57,8 +62,11 @@ const kitchenApp = {
                         dishName: item.menuItem ? item.menuItem.name : 'Món ???',
                         qty: item.quantity,
                         status: status,
-                        // Tính thời gian từ lúc order được tạo
-                        startTime: new Date(order.orderTime).getTime()
+                        
+                        // [CẬP NHẬT] Dùng timeSource đã xác định ở trên
+                        startTime: new Date(timeSource).getTime(),
+                        
+                        note: item.note || '' 
                     });
                 }
             });
@@ -67,38 +75,24 @@ const kitchenApp = {
         this.items = newItems;
         this.renderBoard();
         
-        // Kích hoạt logic tự động nếu được bật
         if (this.config.autoMode) {
             this.autoProcessOrders();
         }
     },
 
-    // --- LOGIC TỰ ĐỘNG CHUYỂN TRẠNG THÁI ---
     autoProcessOrders() {
         const now = Date.now();
-
         this.items.forEach(item => {
-            // Tạo ID duy nhất để không xử lý 1 món 2 lần cùng lúc
             const processKey = `${item.orderId}-${item.id}-${item.status}`;
             if (this.processingSet.has(processKey)) return;
 
-            // Tính số giây đã trôi qua từ lúc tạo Order
             const elapsedSec = Math.floor((now - item.startTime) / 1000);
 
-            // Logic chuyển trạng thái dựa trên tổng thời gian trôi qua
-            // 1. Nếu đang ORDERED và đã qua thời gian chờ -> Chuyển sang COOKING
             if (item.status === 'ORDERED' && elapsedSec >= this.config.timeToStart) {
                 this.triggerNextState(item, processKey);
-            }
-            
-            // 2. Nếu đang COOKING và tổng thời gian >= (thời gian chờ + thời gian nấu) -> READY
-            // Ví dụ: Chờ 10s, Nấu 20s. Tổng 30s thì xong.
-            else if (item.status === 'COOKING' && elapsedSec >= (this.config.timeToStart + this.config.timeToCook)) {
+            } else if (item.status === 'COOKING' && elapsedSec >= (this.config.timeToStart + this.config.timeToCook)) {
                 this.triggerNextState(item, processKey);
-            }
-
-            // 3. Nếu đang READY và đã để đó đủ lâu -> SERVED (Xong)
-            else if (item.status === 'READY' && elapsedSec >= (this.config.timeToStart + this.config.timeToCook + this.config.timeToServe)) {
+            } else if (item.status === 'READY' && elapsedSec >= (this.config.timeToStart + this.config.timeToCook + this.config.timeToServe)) {
                 this.triggerNextState(item, processKey);
             }
         });
@@ -106,12 +100,11 @@ const kitchenApp = {
 
     async triggerNextState(item, processKey) {
         console.log(`Auto-Chef: Đang chuyển món ${item.dishName} (Bàn ${item.tableName}) sang bước tiếp theo...`);
-        this.processingSet.add(processKey); // Đánh dấu đang xử lý
+        this.processingSet.add(processKey); 
 
         try {
             await this.updateItemStatus(item.orderId, item.id);
         } finally {
-            // Xóa đánh dấu sau 1 khoảng thời gian ngắn để đảm bảo API đã xong
             setTimeout(() => {
                 this.processingSet.delete(processKey);
             }, 2000);
@@ -148,8 +141,13 @@ const kitchenApp = {
                 badgeText = 'Sẵn sàng';
             }
 
-            // Vẫn giữ sự kiện click nếu muốn can thiệp thủ công
             const nextAction = `onclick="kitchenApp.updateItemStatus(${item.orderId}, ${item.id})"`;
+
+            const noteHtml = item.note 
+                ? `<div style="margin-top:5px; padding:4px 8px; background:#fff1f2; border:1px dashed #f43f5e; border-radius:4px; color:#e11d48; font-size:12px; font-weight:600;">
+                     <i class='bx bx-note'></i> Note: ${item.note}
+                   </div>` 
+                : '';
 
             return `
             <div class="ticket" id="ticket-${item.id}" ${nextAction} style="cursor:pointer;" title="Tự động chuyển sau vài giây...">
@@ -159,7 +157,8 @@ const kitchenApp = {
                 </div>
                 <div class="ticket-dish">
                     <h4 style="margin: 8px 0; color: #2d3436;">${item.dishName}</h4>
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                    
+                    ${noteHtml} <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
                         <span class="ticket-qty" style="background:#2d3436; color:white; padding:2px 8px; border-radius:4px; font-weight:bold;">x${item.qty}</span>
                         <div class="time-track" style="font-size: 12px; color: #636e72;">
                             <i class='bx bx-time-five'></i> ${timeDisplay}
@@ -179,8 +178,6 @@ const kitchenApp = {
                 method: 'PUT'
             });
             if (res.ok) {
-                // Không cần gọi fetchData ngay lập tức vì vòng lặp polling sẽ lo việc đó
-                // nhưng gọi luôn để phản hồi nhanh trên UI nếu click tay
                 this.fetchData(); 
             } else {
                 console.error("Lỗi cập nhật trạng thái");

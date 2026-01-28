@@ -1,13 +1,14 @@
 package com.restaurant.model.entity;
 
-import jakarta.persistence.Column; // Nhớ import thư viện JPA
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 @Entity
-@jakarta.persistence.Table(name = "menu_items")
+@Table(name = "menu_items")
 public class MenuItem {
 
     @Id
@@ -20,16 +21,17 @@ public class MenuItem {
     @Column(nullable = false)
     private double price;
 
-    @Column(name = "image_url") // Trong SQL là image_url
+    @Column(name = "image_url")
     private String imageUrl;
 
-    @Column(name = "category_id") // Trong SQL là category_id
+    @Column(name = "category_id")
     private String categoryId;
 
+    // [QUAN TRỌNG] Dùng String thay vì Enum để tránh lỗi dữ liệu
+    // Giá trị sẽ là "AVAILABLE" hoặc "OUT_OF_STOCK"
     @Column(name = "status")
-    private String status = "available"; // Mặc định là 'available'
+    private String status = "AVAILABLE"; 
 
-    // Bổ sung thêm 2 trường này cho khớp SQL (tránh lỗi khi select *)
     @Column(name = "badge")
     private String badge;
 
@@ -39,6 +41,7 @@ public class MenuItem {
     // --- CONSTRUCTORS ---
     public MenuItem() {}
 
+    // Constructor đã được sửa lại tham số status là String
     public MenuItem(int id, String name, double price, String imageUrl, String categoryId, String status) {
         this.id = id;
         this.name = name;
@@ -48,7 +51,7 @@ public class MenuItem {
         this.status = status;
     }
 
-    // --- GETTERS & SETTERS (Bắt buộc phải có đủ) ---
+    // --- GETTERS & SETTERS ---
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
 
@@ -64,7 +67,10 @@ public class MenuItem {
     public String getCategoryId() { return categoryId; }
     public void setCategoryId(String categoryId) { this.categoryId = categoryId; }
 
+    // Getter trả về String
     public String getStatus() { return status; }
+    
+    // Setter nhận vào String
     public void setStatus(String status) { this.status = status; }
 
     public String getBadge() { return badge; }
