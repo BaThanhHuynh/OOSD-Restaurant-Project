@@ -7,6 +7,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
 
 @Entity
 @jakarta.persistence.Table(name = "payments")
@@ -16,7 +18,7 @@ public class Payment {
     private int id;
 
     @Column(name = "table_id")
-    private int tableId; // Biến này cần có Getter bên dưới
+    private int tableId;
 
     @Column(name = "amount")
     private double amount;
@@ -27,17 +29,24 @@ public class Payment {
     @Column(name = "method")
     private String method;
 
+    @Column(name = "payment_method", nullable = false)
+    private String paymentMethod;
+
+    @OneToOne
+    @JoinColumn(name = "order_id", unique = true)
+    private Order order;
+
     public Payment() {}
 
     public Payment(int tableId, double amount, String method) {
         this.tableId = tableId;
         this.amount = amount;
         this.method = method;
+        this.paymentMethod = method; 
         this.paymentTime = LocalDateTime.now();
     }
     
     // --- KHU VỰC QUAN TRỌNG: CÁC HÀM GETTER & SETTER ---
-    // (Thiếu hàm này là PaymentService sẽ báo lỗi đỏ ngay)
     public int getTableId() { 
         return tableId; 
     }
@@ -56,5 +65,17 @@ public class Payment {
     public void setPaymentTime(LocalDateTime paymentTime) { this.paymentTime = paymentTime; }
 
     public String getMethod() { return method; }
-    public void setMethod(String method) { this.method = method; }
+    public void setMethod(String method) { 
+        this.method = method; 
+        this.paymentMethod = method; 
+    }
+
+    public String getPaymentMethod() { return paymentMethod; }
+    public void setPaymentMethod(String paymentMethod) { 
+        this.paymentMethod = paymentMethod;
+        this.method = paymentMethod; 
+    }
+
+    public Order getOrder() { return order; }
+    public void setOrder(Order order) { this.order = order; }
 }

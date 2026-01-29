@@ -13,7 +13,7 @@ import com.restaurant.repository.OrderRepository;
 import com.restaurant.repository.PaymentRepository;
 
 @Service
-@Transactional // Quan trọng: Giúp rollback toàn bộ nếu có lỗi
+@Transactional 
 public class PaymentService {
     
     private final PaymentRepository paymentRepository;
@@ -31,17 +31,13 @@ public class PaymentService {
 
     public void processPayment(Payment payment) {
         // 1. Tìm đơn hàng đang hoạt động của bàn
-        // (Repository đã được sửa để tìm cả trạng thái COMPLETED)
         Order order = orderRepository.findActiveOrderByTableId(payment.getTableId())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng để thanh toán!"));
 
-        // 2. Cập nhật trạng thái đơn hàng (Đồng bộ cả 2 cột)
+        // 2. Cập nhật trạng thái đơn hàng
         
-        // a. Cập nhật cột order_status (Logic quy trình mới)
         order.setOrderStatus(OrderStatus.PAID);
         
-        // b. [QUAN TRỌNG] Cập nhật cột payment_status (Logic DB cũ)
-        // Để tránh cột này bị NULL hoặc vẫn là 'unpaid'
         order.setPaymentStatus("paid"); 
 
         orderRepository.save(order);
@@ -49,8 +45,12 @@ public class PaymentService {
         // 3. --- [LƯU VÀO BẢNG PAYMENTS] ---
         payment.setPaymentTime(LocalDateTime.now());
         payment.setAmount(order.getTotalAmount()); 
+        payment.setOrder(order); 
         
-        // Lưu lịch sử thanh toán
+        if (payment.getPaymentMethod() == null && payment.getMethod() != null) {
+            payment.setPaymentMethod(payment.getMethod());
+        }
+        
         paymentRepository.save(payment); 
 
         // 4. --- [RESET BÀN VỀ TRỐNG] ---
